@@ -1,0 +1,16 @@
+name: Humanoid
+version: '${project.version}'
+main: com.personoid.humanoid.Humanoid
+api-version: 1.19
+authors: [ DefineDoddy, notnotnotswipez ]
+description: A plugin aimed at introducing lifelike players to a Minecraft server
+commands:
+  npc:
+    description: Accesses the NPC commands
+    default: op
+  profiler:
+    description: Accesses the profiler commands
+    default: op
+  debugger:
+    description: Accesses the debugger commands
+    default: op
