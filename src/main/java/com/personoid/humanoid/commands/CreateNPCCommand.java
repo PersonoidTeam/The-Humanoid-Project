@@ -6,7 +6,7 @@ import com.personoid.api.utils.bukkit.Message;
 import com.personoid.humanoid.activites.gathering.MineTreeActivity;
 import com.personoid.humanoid.activites.location.FollowEntityActivity;
 import com.personoid.humanoid.activites.location.WanderActivity;
-import com.personoid.humanoid.activites.targeting.AttackEntityActivity;
+import com.personoid.humanoid.activites.targeting.FightPlayerActivity;
 import com.personoid.humanoid.handlers.CommandHandler;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -31,7 +31,7 @@ public class CreateNPCCommand extends CommandHandler.Command {
                 new WanderActivity(),
                 new MineTreeActivity(),
                 new FollowEntityActivity(sender),
-                new AttackEntityActivity(sender)
+                new FightPlayerActivity(sender)
         );
         new Message("&aCreated NPC: &e" + npc.getEntity().getName()).send(sender);
         return true;
