@@ -83,10 +83,12 @@ public class FightPlayerActivity extends Activity {
     @Override
     public void onUpdate() {
         if (checkWinStatus()) return;
-        run(new GoToLocationActivity(player.getLocation(), MovementType.SPRINTING));
+        double distance = getNPC().getLocation().distance(player.getLocation());
+        MovementType movementType = distance > 4 ? MovementType.SPRINT_JUMPING : MovementType.SPRINTING;
+        run(new GoToLocationActivity(player.getLocation(), movementType));
         int attackSpeed = getAttackSpeed(getNPC().getNPCInventory().getSelectedItem());
         if (attackCooldown <= 0) {
-            if (getNPC().getLocation().distance(player.getLocation()) < 3.25) {
+            if (distance < 3.25) {
                 getNPC().swingHand(HandEnum.RIGHT);
 /*                ServerPlayer npcServerPlayer = ((CraftPlayer)getNPC().getEntity()).getHandle();
                 ServerPlayer playerServerPlayer = ((CraftPlayer)player).getHandle();
@@ -125,9 +127,8 @@ public class FightPlayerActivity extends Activity {
             attackCooldown = attackSpeed;
         } else {
             if (attackCooldown < 10) getNPC().getMoveController().jump();
-            boolean shieldDisabled = getNPC().getEntity().getCooldown(Material.SHIELD) > 0;
-            Bukkit.broadcastMessage("Shield cooldown: " + getNPC().getEntity().getCooldown(Material.SHIELD));
-            if ((attackCooldown > 2 || attackCooldown + 3 > attackSpeed) && !shieldDisabled) getNPC().beginUsingItem(HandEnum.LEFT);
+            boolean shieldDisabled = getNPC().getItemCooldown(Material.SHIELD) > 0;
+            if (attackCooldown > 2 && attackCooldown < attackSpeed - 5 && !shieldDisabled && distance < 4) getNPC().beginUsingItem(HandEnum.LEFT);
             else getNPC().endUsingItem();
             attackCooldown--;
         }
