@@ -39,9 +39,10 @@ public class FightPlayerActivity extends Activity {
 
     @Override
     public void onStart(StartType startType) {
-        getNPC().getLookController().addTarget("fight_target", new Target(player, Priority.HIGHEST));
-        getNPC().getNPCInventory().addItem(new ItemStack(Material.NETHERITE_AXE));
-        switchToItem(Material.NETHERITE_AXE);
+        getNPC().getLookController().addTarget("fight_target", new Target(player, Priority.HIGHEST).track());
+        getNPC().getNPCInventory().addItem(new ItemStack(Material.IRON_AXE));
+        getNPC().getNPCInventory().setOffhand(new ItemStack(Material.SHIELD));
+        switchToItem(Material.IRON_AXE);
         attackCooldown = getAttackSpeed(getNPC().getNPCInventory().getSelectedItem());
         player.hidePlayer(Humanoid.getPlugin(), getNPC().getEntity());
         player.showPlayer(Humanoid.getPlugin(), getNPC().getEntity());
@@ -83,9 +84,9 @@ public class FightPlayerActivity extends Activity {
     public void onUpdate() {
         if (checkWinStatus()) return;
         run(new GoToLocationActivity(player.getLocation(), MovementType.SPRINTING));
+        int attackSpeed = getAttackSpeed(getNPC().getNPCInventory().getSelectedItem());
         if (attackCooldown <= 0) {
-            getNPC().getEntity().resetPlayerTime();
-            if (getNPC().getLocation().distance(player.getLocation()) < 5) {
+            if (getNPC().getLocation().distance(player.getLocation()) < 3.25) {
                 getNPC().swingHand(HandEnum.RIGHT);
 /*                ServerPlayer npcServerPlayer = ((CraftPlayer)getNPC().getEntity()).getHandle();
                 ServerPlayer playerServerPlayer = ((CraftPlayer)player).getHandle();
@@ -106,19 +107,28 @@ public class FightPlayerActivity extends Activity {
                     double damage = (double) attribute.getMethod("f").invoke(attribute);*/
                 //double damage = getNPC().getEntity().getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).getValue();
                 getNPC().getEntity().attack(player);
-                double x = player.getLocation().getX();
-                double y = player.getLocation().getY() + 2;
-                double z = player.getLocation().getZ();
-                ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(ParticleTypes.CRIT, false, x, y, z, .5F, .4F, .5F, 0, 15);
-                for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-                    ServerPlayer serverPlayer = ((CraftPlayer)onlinePlayer).getHandle();
-                    serverPlayer.connection.send(packet);
+                // critical hit
+                if (getNPC().getMoveController().getVelocity().getY() < 0) {
+                    double x = player.getLocation().getX();
+                    double y = player.getLocation().getY() + 2;
+                    double z = player.getLocation().getZ();
+                    // particle type, ?, position, offset/range, speed, number of particles
+                    ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(ParticleTypes.CRIT, false, x, y, z,
+                            .5F, .4F, .5F, 0, 15);
+                    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                        ServerPlayer serverPlayer = ((CraftPlayer)onlinePlayer).getHandle();
+                        serverPlayer.connection.send(packet);
+                    }
+                    getNPC().getLocation().getWorld().playSound(getNPC().getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1, 1);
                 }
-                getNPC().getLocation().getWorld().playSound(getNPC().getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1, 1);
             }
-            attackCooldown = getAttackSpeed(getNPC().getNPCInventory().getSelectedItem());
+            attackCooldown = attackSpeed;
         } else {
             if (attackCooldown < 10) getNPC().getMoveController().jump();
+            boolean shieldDisabled = getNPC().getEntity().getCooldown(Material.SHIELD) > 0;
+            Bukkit.broadcastMessage("Shield cooldown: " + getNPC().getEntity().getCooldown(Material.SHIELD));
+            if ((attackCooldown > 2 || attackCooldown + 3 > attackSpeed) && !shieldDisabled) getNPC().beginUsingItem(HandEnum.LEFT);
+            else getNPC().endUsingItem();
             attackCooldown--;
         }
     }
