@@ -88,21 +88,28 @@ public class FightPlayerActivity extends Activity {
     }
 
     private final int lowHealthValue = MathUtils.random(2, 7);
-    private final double highHealthMod = MathUtils.random(0.6, 1);
+    private final double highHealthMod = MathUtils.random(0.75, 1);
     private final int retreatEndCooldown = MathUtils.random(3 * 20, 7 * 20);
     private int retreatEndTimer;
 
     private boolean shouldRetreat() {
         // TODO: get best weapon used by player rather than one currently holding
         Bukkit.broadcastMessage("highestDamageTaken: " + highestDamageTaken);
-        boolean tooClose = getNPC().getEntity().getLocation().distance(player.getLocation()) < 4.2;
+        boolean tooClose = getNPC().getLocation().distance(player.getLocation()) < 4.2;
         boolean lowHealth = getNPC().getEntity().getHealth() - Math.min(highestDamageTaken, 19) < lowHealthValue;
         boolean highHealth = getNPC().getEntity().getHealth() > getNPC().getEntity().getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() * highHealthMod;
         Bukkit.broadcastMessage("lowHealth: " + lowHealth);
         Bukkit.broadcastMessage("highHealth: " + highHealth);
         Bukkit.broadcastMessage("tooClose: " + tooClose);
         Bukkit.broadcastMessage("retreat end timer: " + MathUtils.round(retreatEndTimer, 2) + " / " + MathUtils.round(retreatEndCooldown, 2));
-        return retreating ? !highHealth : lowHealth && (retreatEndTimer <= retreatEndCooldown || !tooClose);
+        if (retreating) {
+            if (highHealth) {
+                return false;
+            } else {
+                if (tooClose) return retreatEndTimer < retreatEndCooldown;
+                else return true;
+            }
+        } else return lowHealth;
     }
 
     @Override
