@@ -27,11 +27,10 @@ public class CreateNPCCommand extends CommandHandler.Command {
         PersonoidAPI.getRegistry().spawnNPC(npc, sender.getLocation());
         npc.getNavigation().getPathfinder().getOptions().setUseChunking(false);
         npc.getNPCBrain().getActivityManager().register(
-                //new FollowEntityActivity(sender, 2),
                 new WanderActivity(),
                 new MineTreeActivity(),
                 new FollowEntityActivity(sender),
-                new FightPlayerActivity(sender)
+                new FightPlayerActivity(sender, FightPlayerActivity.AttackType.ALL, FightPlayerActivity.Strategy.MIXED)
         );
         new Message("&aCreated NPC: &e" + npc.getEntity().getName()).send(sender);
         return true;

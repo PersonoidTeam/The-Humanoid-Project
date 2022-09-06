@@ -1,38 +1,31 @@
 package com.personoid.humanoid.activites.targeting;
 
-import com.google.common.collect.Multimap;
 import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.ai.looking.Target;
 import com.personoid.api.ai.movement.MovementType;
 import com.personoid.api.utils.Result;
-import com.personoid.api.utils.packet.ReflectionUtils;
 import com.personoid.api.utils.types.HandEnum;
 import com.personoid.api.utils.types.Priority;
 import com.personoid.humanoid.Humanoid;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
+import com.personoid.humanoid.utils.MathUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import org.bukkit.util.Vector;
 
 public class FightPlayerActivity extends Activity {
     private final Player player;
     private int attackCooldown;
+    private boolean retreating;
+    private double lastHealth;
+    private double highestDamageTaken;
 
-    public FightPlayerActivity(Player player) {
+    public FightPlayerActivity(Player player, AttackType attackType, Strategy strategy) {
         super(ActivityType.FIGHTING, Priority.HIGHEST);
         this.player = player;
     }
@@ -42,34 +35,48 @@ public class FightPlayerActivity extends Activity {
         getNPC().getLookController().addTarget("fight_target", new Target(player, Priority.HIGHEST).track());
         getNPC().getNPCInventory().addItem(new ItemStack(Material.IRON_AXE));
         getNPC().getNPCInventory().setOffhand(new ItemStack(Material.SHIELD));
-        switchToItem(Material.IRON_AXE);
-        attackCooldown = getAttackSpeed(getNPC().getNPCInventory().getSelectedItem());
+        switchToItem(getBestWeapon());
+        attackCooldown = FightingUtils.getAttackSpeed(getNPC().getNPCInventory().getSelectedItem());
         player.hidePlayer(Humanoid.getPlugin(), getNPC().getEntity());
         player.showPlayer(Humanoid.getPlugin(), getNPC().getEntity());
     }
 
-    private int switchToItem(Material material) {
+    public enum AttackType {
+        MELEE,
+        RANGED,
+        MAGIC,
+        ALL
+    }
+
+    public enum Strategy {
+        OFFENSIVE,
+        DEFENSIVE,
+        MIXED
+    }
+
+    private ItemStack getBestWeapon() {
+        ItemStack bestWeapon = null;
+        double bestDamage = 0;
+        for (ItemStack itemStack : getNPC().getNPCInventory().getHotbar()) {
+            if (itemStack == null) continue;
+            double damage = FightingUtils.getAttackDamage(itemStack);
+            if (damage > bestDamage) {
+                bestDamage = damage;
+                bestWeapon = itemStack;
+            }
+        }
+        return bestWeapon;
+    }
+
+    private int switchToItem(ItemStack itemStack) {
         for (int i = 0; i < 9; i++) {
-            ItemStack item = getNPC().getNPCInventory().getHotbar().get(i);
-            if (item != null && item.getType() == material) {
+            ItemStack item = getNPC().getNPCInventory().getHotbar()[i];
+            if (item != null && item.isSimilar(itemStack)) {
                 getNPC().getNPCInventory().select(i);
                 return i;
             }
         }
         return -1;
-    }
-
-    private int getAttackSpeed(ItemStack item) {
-        try {
-            Class<?> craftClass = ReflectionUtils.getCraftClass("inventory", "CraftItemStack");
-            Object nmsItem = craftClass.getDeclaredMethod("asNMSCopy", ItemStack.class).invoke(null, item);
-            Method method = nmsItem.getClass().getMethod("a", EquipmentSlot.class);
-            Multimap<Attribute, AttributeModifier> map = (Multimap<Attribute, AttributeModifier>) method.invoke(nmsItem, EquipmentSlot.MAINHAND);
-            double itemSpeed = map.get(Attributes.ATTACK_SPEED).stream().mapToDouble(AttributeModifier::getAmount).sum();
-            //Bukkit.broadcastMessage(item.getType().name() + " attack speed: " + (int) (1 / (4 + itemSpeed) * 20));
-            return (int) (1 / (4 + itemSpeed) * 20);
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
-        return 0;
     }
 
     private boolean checkWinStatus() {
@@ -80,49 +87,53 @@ public class FightPlayerActivity extends Activity {
         return false;
     }
 
+    private final int lowHealthValue = MathUtils.random(2, 7);
+    private final double highHealthMod = MathUtils.random(0.6, 1);
+    private final int retreatEndCooldown = MathUtils.random(3 * 20, 7 * 20);
+    private int retreatEndTimer;
+
+    private boolean shouldRetreat() {
+        // TODO: get best weapon used by player rather than one currently holding
+        Bukkit.broadcastMessage("highestDamageTaken: " + highestDamageTaken);
+        boolean tooClose = getNPC().getEntity().getLocation().distance(player.getLocation()) < 4.2;
+        boolean lowHealth = getNPC().getEntity().getHealth() - Math.min(highestDamageTaken, 19) < lowHealthValue;
+        boolean highHealth = getNPC().getEntity().getHealth() > getNPC().getEntity().getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() * highHealthMod;
+        Bukkit.broadcastMessage("lowHealth: " + lowHealth);
+        Bukkit.broadcastMessage("highHealth: " + highHealth);
+        Bukkit.broadcastMessage("tooClose: " + tooClose);
+        Bukkit.broadcastMessage("retreat end timer: " + MathUtils.round(retreatEndTimer, 2) + " / " + MathUtils.round(retreatEndCooldown, 2));
+        return retreating ? !highHealth : lowHealth && (retreatEndTimer <= retreatEndCooldown || !tooClose);
+    }
+
     @Override
     public void onUpdate() {
         if (checkWinStatus()) return;
+        if (lastHealth - getNPC().getEntity().getHealth() > highestDamageTaken) {
+            highestDamageTaken = lastHealth - getNPC().getEntity().getHealth();
+        }
         double distance = getNPC().getLocation().distance(player.getLocation());
-        MovementType movementType = distance > 4 ? MovementType.SPRINT_JUMPING : MovementType.SPRINTING;
-        run(new GoToLocationActivity(player.getLocation(), movementType));
-        int attackSpeed = getAttackSpeed(getNPC().getNPCInventory().getSelectedItem());
-        if (attackCooldown <= 0) {
-            if (distance < 3.25) {
-                getNPC().swingHand(HandEnum.RIGHT);
-/*                ServerPlayer npcServerPlayer = ((CraftPlayer)getNPC().getEntity()).getHandle();
-                ServerPlayer playerServerPlayer = ((CraftPlayer)player).getHandle();
+        boolean retreating = shouldRetreat();
+        if (retreating) retreatEndTimer = this.retreating ? retreatEndTimer + 1 : 1;
+        this.retreating = retreating;
+        Bukkit.broadcastMessage("retreating: " + retreating);
+        Vector direction = player.getLocation().toVector().subtract(getNPC().getLocation().toVector()).normalize();
+        Location retreatLoc = getNPC().getLocation().clone().add(direction.multiply(-1));
+        Location targetLoc = retreating ? retreatLoc : player.getLocation();
 
-                ChunkMap tracker = ((ServerLevel)playerServerPlayer.level).getChunkSource().chunkMap;
-                ChunkMap.TrackedEntity entry = tracker.entityMap.get(getNPC().getEntity().getEntityId());
-                if (entry != null) {
-                    entry.removePlayer(npcServerPlayer);
-                    Packets.removePlayer(getNPC().getEntity()).send();
-                    entry.updatePlayer(npcServerPlayer);
-                    Packets.addPlayer(getNPC().getEntity()).send();
-                }*/
-/*                    Class<?> nmsPlayerClass = npc.getClass().getMethod("getHandle").invoke(npc).getClass();
-                    Bukkit.broadcastMessage("NMS player: " + nmsPlayerClass);
-                    MethodHandle handle = MethodHandles.lookup().findSpecial()
-                    Class<?> attribute = nmsPlayerClass.getMethod("a").invoke(Attributes.ATTACK_DAMAGE).getClass();
-                    Bukkit.broadcastMessage("Attribute: " + attribute);
-                    double damage = (double) attribute.getMethod("f").invoke(attribute);*/
-                //double damage = getNPC().getEntity().getAttribute(org.bukkit.attribute.Attribute.GENERIC_ATTACK_DAMAGE).getValue();
-                getNPC().getEntity().attack(player);
-                // critical hit
+        MovementType movementType = distance > 4 || retreating ? MovementType.SPRINT_JUMPING : MovementType.SPRINTING;
+        getNPC().getLookController().addTarget("fight_target", new Target(targetLoc, Priority.HIGHEST).track());
+        run(new GoToLocationActivity(targetLoc, movementType));
+
+        int attackSpeed = FightingUtils.getAttackSpeed(getNPC().getNPCInventory().getSelectedItem());
+        if (attackCooldown <= 0) {
+            if (!retreating && distance < 3.25) {
+                getNPC().swingHand(HandEnum.RIGHT);
+                double damage = getNPC().getEntity().getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getValue();
                 if (getNPC().getMoveController().getVelocity().getY() < 0) {
-                    double x = player.getLocation().getX();
-                    double y = player.getLocation().getY() + 2;
-                    double z = player.getLocation().getZ();
-                    // particle type, ?, position, offset/range, speed, number of particles
-                    ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(ParticleTypes.CRIT, false, x, y, z,
-                            .5F, .4F, .5F, 0, 15);
-                    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-                        ServerPlayer serverPlayer = ((CraftPlayer)onlinePlayer).getHandle();
-                        serverPlayer.connection.send(packet);
-                    }
-                    getNPC().getLocation().getWorld().playSound(getNPC().getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1, 1);
+                    damage *= 1.5;
+                    FightingUtils.playCriticalHitEffect(player.getLocation());
                 }
+                player.damage(damage, getNPC().getEntity());
             }
             attackCooldown = attackSpeed;
         } else {
@@ -132,6 +143,7 @@ public class FightPlayerActivity extends Activity {
             else getNPC().endUsingItem();
             attackCooldown--;
         }
+        lastHealth = getNPC().getEntity().getHealth();
     }
 
     @Override
