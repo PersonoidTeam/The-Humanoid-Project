@@ -9,8 +9,8 @@ import com.personoid.api.utils.Result;
 import com.personoid.api.utils.types.HandEnum;
 import com.personoid.api.utils.types.Priority;
 import com.personoid.humanoid.Humanoid;
+import com.personoid.humanoid.utils.LocationUtils;
 import com.personoid.humanoid.utils.MathUtils;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -19,7 +19,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 public class FightPlayerActivity extends Activity {
-    private final Player player;
+    private Player player;
+    private final AttackType attackType;
+    private final Strategy strategy;
     private int attackCooldown;
     private boolean retreating;
     private double lastHealth;
@@ -28,15 +30,17 @@ public class FightPlayerActivity extends Activity {
     public FightPlayerActivity(Player player, AttackType attackType, Strategy strategy) {
         super(ActivityType.FIGHTING, Priority.HIGHEST);
         this.player = player;
+        this.attackType = attackType;
+        this.strategy = strategy;
     }
 
     @Override
     public void onStart(StartType startType) {
-        getNPC().getLookController().addTarget("fight_target", new Target(player, Priority.HIGHEST).track());
-        getNPC().getNPCInventory().addItem(new ItemStack(Material.IRON_AXE));
-        getNPC().getNPCInventory().setOffhand(new ItemStack(Material.SHIELD));
+        getNPC().getLookController().addTarget("fight_target", new Target(player, Priority.HIGHEST));
+        getNPC().getInventory().addItem(new ItemStack(Material.STONE_AXE));
+        getNPC().getInventory().setOffhand(new ItemStack(Material.SHIELD));
         switchToItem(getBestWeapon());
-        attackCooldown = FightingUtils.getAttackSpeed(getNPC().getNPCInventory().getSelectedItem());
+        attackCooldown = FightingUtils.getAttackSpeed(getNPC().getInventory().getSelectedItem());
         player.hidePlayer(Humanoid.getPlugin(), getNPC().getEntity());
         player.showPlayer(Humanoid.getPlugin(), getNPC().getEntity());
     }
@@ -57,7 +61,7 @@ public class FightPlayerActivity extends Activity {
     private ItemStack getBestWeapon() {
         ItemStack bestWeapon = null;
         double bestDamage = 0;
-        for (ItemStack itemStack : getNPC().getNPCInventory().getHotbar()) {
+        for (ItemStack itemStack : getNPC().getInventory().getHotbar()) {
             if (itemStack == null) continue;
             double damage = FightingUtils.getAttackDamage(itemStack);
             if (damage > bestDamage) {
@@ -70,9 +74,9 @@ public class FightPlayerActivity extends Activity {
 
     private int switchToItem(ItemStack itemStack) {
         for (int i = 0; i < 9; i++) {
-            ItemStack item = getNPC().getNPCInventory().getHotbar()[i];
-            if (item != null && item.isSimilar(itemStack)) {
-                getNPC().getNPCInventory().select(i);
+            ItemStack item = getNPC().getInventory().getHotbar()[i];
+            if (item != null && FightingUtils.isSimilar(itemStack, item)) {
+                getNPC().getInventory().select(i);
                 return i;
             }
         }
@@ -94,14 +98,14 @@ public class FightPlayerActivity extends Activity {
 
     private boolean shouldRetreat() {
         // TODO: get best weapon used by player rather than one currently holding
-        Bukkit.broadcastMessage("highestDamageTaken: " + highestDamageTaken);
+        //Bukkit.broadcastMessage("highestDamageTaken: " + highestDamageTaken);
         boolean tooClose = getNPC().getLocation().distance(player.getLocation()) < 4.2;
         boolean lowHealth = getNPC().getEntity().getHealth() - Math.min(highestDamageTaken, 19) < lowHealthValue;
         boolean highHealth = getNPC().getEntity().getHealth() > getNPC().getEntity().getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() * highHealthMod;
-        Bukkit.broadcastMessage("lowHealth: " + lowHealth);
-        Bukkit.broadcastMessage("highHealth: " + highHealth);
-        Bukkit.broadcastMessage("tooClose: " + tooClose);
-        Bukkit.broadcastMessage("retreat end timer: " + MathUtils.round(retreatEndTimer, 2) + " / " + MathUtils.round(retreatEndCooldown, 2));
+        //Bukkit.broadcastMessage("lowHealth: " + lowHealth);
+        //Bukkit.broadcastMessage("highHealth: " + highHealth);
+        //Bukkit.broadcastMessage("tooClose: " + tooClose);
+        //Bukkit.broadcastMessage("retreat end timer: " + MathUtils.round(retreatEndTimer, 2) + " / " + MathUtils.round(retreatEndCooldown, 2));
         if (retreating) {
             if (highHealth) {
                 return false;
@@ -112,42 +116,49 @@ public class FightPlayerActivity extends Activity {
         } else return lowHealth;
     }
 
+    private int offset = MathUtils.random(-10, 0);
+
     @Override
     public void onUpdate() {
         if (checkWinStatus()) return;
+        player = LocationUtils.getClosestPlayer(getNPC().getLocation());
+
         if (lastHealth - getNPC().getEntity().getHealth() > highestDamageTaken) {
             highestDamageTaken = lastHealth - getNPC().getEntity().getHealth();
         }
         double distance = getNPC().getLocation().distance(player.getLocation());
-        boolean retreating = shouldRetreat();
+        boolean retreating = strategy != Strategy.OFFENSIVE && shouldRetreat();
         if (retreating) retreatEndTimer = this.retreating ? retreatEndTimer + 1 : 1;
         this.retreating = retreating;
-        Bukkit.broadcastMessage("retreating: " + retreating);
+        //Bukkit.broadcastMessage("retreating: " + retreating);
         Vector direction = player.getLocation().toVector().subtract(getNPC().getLocation().toVector()).normalize();
         Location retreatLoc = getNPC().getLocation().clone().add(direction.multiply(-1));
         Location targetLoc = retreating ? retreatLoc : player.getLocation();
 
         MovementType movementType = distance > 4 || retreating ? MovementType.SPRINT_JUMPING : MovementType.SPRINTING;
-        getNPC().getLookController().addTarget("fight_target", new Target(targetLoc, Priority.HIGHEST).track());
+        getNPC().getLookController().addTarget("fight_target", new Target(targetLoc, Priority.HIGHEST));
         run(new GoToLocationActivity(targetLoc, movementType));
 
-        int attackSpeed = FightingUtils.getAttackSpeed(getNPC().getNPCInventory().getSelectedItem());
-        if (attackCooldown <= 0) {
+        int attackSpeed = FightingUtils.getAttackSpeed(getNPC().getInventory().getSelectedItem());
+        if (attackCooldown <= offset) {
             if (!retreating && distance < 3.25) {
                 getNPC().swingHand(HandEnum.RIGHT);
                 double damage = getNPC().getEntity().getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getValue();
                 if (getNPC().getMoveController().getVelocity().getY() < 0) {
                     damage *= 1.5;
-                    FightingUtils.playCriticalHitEffect(player.getLocation());
+                    if (FightingUtils.inSurvival(player)) {
+                        FightingUtils.playCriticalHitEffect(player.getLocation());
+                    }
                 }
-                player.damage(damage, getNPC().getEntity());
+                getNPC().getEntity().attack(player);
             }
             attackCooldown = attackSpeed;
+            offset = MathUtils.random(-10, 0);
         } else {
-            if (attackCooldown < 10) getNPC().getMoveController().jump();
+            if (attackCooldown < 10 + offset) getNPC().getMoveController().jump();
             boolean shieldDisabled = getNPC().getItemCooldown(Material.SHIELD) > 0;
-            if (attackCooldown > 2 && attackCooldown < attackSpeed - 5 && !shieldDisabled && distance < 4) getNPC().beginUsingItem(HandEnum.LEFT);
-            else getNPC().endUsingItem();
+            if (attackCooldown > 2 + offset && attackCooldown < attackSpeed - 5 && !shieldDisabled && distance < 4) getNPC().startUsingItem(HandEnum.LEFT);
+            else getNPC().stopUsingItem();
             attackCooldown--;
         }
         lastHealth = getNPC().getEntity().getHealth();

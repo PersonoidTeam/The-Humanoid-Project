@@ -10,6 +10,7 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Player;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
@@ -45,6 +46,16 @@ public class LocationUtils {
             }
         }
         return closestNPC;
+    }
+
+    public static Player getClosestPlayer(Location location) {
+        Player closestPlayer = null;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (closestPlayer == null || player.getLocation().distance(location) < closestPlayer.getLocation().distance(location)) {
+                closestPlayer = player;
+            }
+        }
+        return closestPlayer;
     }
 
     public static Block getBlockInDir(Location location, BlockFace direction) {

@@ -1,7 +1,6 @@
 name: Humanoid
 version: '${project.version}'
 main: com.personoid.humanoid.Humanoid
-api-version: 1.19
 authors: [ DefineDoddy, notnotnotswipez ]
 description: A plugin aimed at introducing lifelike players to a Minecraft server
 commands:

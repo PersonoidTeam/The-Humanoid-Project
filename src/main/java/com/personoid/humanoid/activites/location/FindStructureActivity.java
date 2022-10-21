@@ -108,12 +108,12 @@ public class FindStructureActivity extends Activity {
                         // if we passed the for loop then we have found a matching structure
                         if (chosenStructure != null) {
                             switch (searchType) { // compare to the current chosen structure based on the search type
-                                case CLOSEST -> {
+                                case CLOSEST: {
                                     if (checkLoc.distance(fromLoc) < chosenStructure.getLocation().distance(fromLoc)) {
                                         chosenStructure = checkLoc.getBlock();
                                     }
                                 }
-                                case FURTHEST -> {
+                                case FURTHEST: {
                                     if (checkLoc.distance(fromLoc) > chosenStructure.getLocation().distance(fromLoc)) {
                                         chosenStructure = checkLoc.getBlock();
                                     }

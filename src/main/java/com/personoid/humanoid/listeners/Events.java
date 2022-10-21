@@ -3,7 +3,9 @@ package com.personoid.humanoid.listeners;
 import com.personoid.api.PersonoidAPI;
 import com.personoid.api.events.NPCDeathEvent;
 import com.personoid.api.npc.NPC;
+import com.personoid.api.npc.Skin;
 import com.personoid.humanoid.Humanoid;
+import com.personoid.humanoid.utils.MathUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -19,13 +21,13 @@ public class Events implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        PersonoidAPI.getRegistry().getNPCs().forEach(npc -> npc.showToPlayers(player));
+        PersonoidAPI.getRegistry().getNPCs().forEach(npc -> npc.setVisibilityTo(player, true));
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        PersonoidAPI.getRegistry().getNPCs().forEach(npc -> npc.hideToPlayers(player));
+        PersonoidAPI.getRegistry().getNPCs().forEach(npc -> npc.setVisibilityTo(player, false));
     }
 
 /*    @EventHandler
@@ -72,8 +74,9 @@ public class Events implements Listener {
 
     @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
-        if (event.getEntity() instanceof Player player) {
-            //Bukkit.broadcastMessage(player.getDisplayName() + " took " + event.getDamage() + " damage");
+        if (event.getEntity() instanceof Player) {
+            Player player = (Player) event.getEntity();
+            Bukkit.broadcastMessage(player.getDisplayName() + " took " + event.getDamage() + " damage");
         }
     }
 
@@ -91,15 +94,19 @@ public class Events implements Listener {
         new BukkitRunnable() {
             @Override
             public void run(){
-                NPC npc = PersonoidAPI.getRegistry().createNPCInstance(oldNPC.getEntity().getWorld(), oldNPC.getEntity().getName());
-                Location spawnLocation = npc.getEntity().getBedSpawnLocation();
+                Location spawnLocation = oldNPC.getEntity().getBedSpawnLocation();
                 if (spawnLocation == null){
                     spawnLocation = Bukkit.getServer().getWorlds().get(0).getSpawnLocation();
                 }
-                PersonoidAPI.getRegistry().spawnNPC(npc, spawnLocation);
-
                 PersonoidAPI.getRegistry().removeNPC(oldNPC);
+                //ServerboundClientCommandPacket packet = new ServerboundClientCommandPacket(ServerboundClientCommandPacket.Action.PERFORM_RESPAWN);
+                //((CraftPlayer)oldNPC.getEntity()).getHandle().connection.handleClientCommand(packet);
+                NPC newNPC = PersonoidAPI.getRegistry().createNPCInstance("Ham and Cheese", Skin.randomDefault());
+                oldNPC.getBrain().getActivityManager().getRegisteredActivities().forEach(activity -> {
+                    newNPC.getBrain().getActivityManager().register(activity);
+                });
+                PersonoidAPI.getRegistry().spawnNPC(newNPC, spawnLocation);
             }
-        }.runTaskLater(Humanoid.getPlugin(), 2*20);
+        }.runTaskLater(Humanoid.getPlugin(), MathUtils.random(2 * 20, 4 * 20));
     }
 }

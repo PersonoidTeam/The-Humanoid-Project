@@ -48,14 +48,16 @@ public class CommandHandler implements CommandExecutor {
                 if (cmd.getRequirements().size() > 0) {
                     for (Command.Requirement requirement : cmd.getRequirements()) {
                         if (requirement.getType() == Command.Requirement.Type.PLAYER) {
-                            if (sender instanceof Player player) {
+                            if (sender instanceof Player) {
+                                Player player = (Player) sender;
                                 return cmd.onCommand(player, shiftedArgs);
                             } else {
                                 cmd.getRequirements(requirement.getType()).forEach(r -> sender.sendMessage(Message.toColor(r.onFailure())));
                                 return true;
                             }
                         } else if (requirement.getType() == Command.Requirement.Type.CONSOLE) {
-                            if (sender instanceof ConsoleCommandSender console) {
+                            if (sender instanceof ConsoleCommandSender) {
+                                ConsoleCommandSender console = (ConsoleCommandSender) sender;
                                 return cmd.onCommand(console, shiftedArgs);
                             } else {
                                 cmd.getRequirements(requirement.getType()).forEach(r -> sender.sendMessage(Message.toColor(r.onFailure())));
@@ -87,7 +89,7 @@ public class CommandHandler implements CommandExecutor {
         }
 
         public List<Requirement> getRequirements(Requirement.Type... types) {
-            if (types.length == 0) return List.of(requirements);
+            if (types.length == 0) return Arrays.asList(requirements);
             List<Requirement> requirements = new ArrayList<>();
             for (Requirement.Type type : types) {
                 for (Requirement requirement : this.requirements) {

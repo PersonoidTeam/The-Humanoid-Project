@@ -13,8 +13,8 @@
 
     <description>A plugin aimed at introducing lifelike players to a Minecraft server</description>
     <properties>
-        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.8</java.version>
         <nms.version>1.19.2-R0.1</nms.version>
     </properties>
 
@@ -107,7 +107,6 @@
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot</artifactId>
             <version>1.19.2-R0.1-SNAPSHOT</version>
-            <classifier>remapped-mojang</classifier>
             <scope>provided</scope>
         </dependency>
         <dependency>

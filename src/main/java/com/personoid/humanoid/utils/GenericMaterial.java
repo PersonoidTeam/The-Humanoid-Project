@@ -25,13 +25,13 @@ public class GenericMaterial {
 
     public boolean matches(Material material) {
         switch (referenceType) {
-            case STARTS_WITH -> {
+            case STARTS_WITH: {
                 return material.name().startsWith(getName());
             }
-            case ENDS_WITH -> {
+            case ENDS_WITH: {
                 return material.name().endsWith(getName());
             }
-            case CONTAINS -> {
+            case CONTAINS: {
                 return material.name().contains(getName());
             }
         }
@@ -42,17 +42,17 @@ public class GenericMaterial {
         List<Material> materials = new ArrayList<>();
         for (Material material : Material.values()) {
             switch (referenceType) {
-                case STARTS_WITH -> {
+                case STARTS_WITH: {
                     if (material.name().startsWith(getName())) {
                         materials.add(material);
                     }
                 }
-                case ENDS_WITH -> {
+                case ENDS_WITH: {
                     if (material.name().endsWith(getName())) {
                         materials.add(material);
                     }
                 }
-                case CONTAINS -> {
+                case CONTAINS: {
                     if (material.name().contains(getName())) {
                         materials.add(material);
                     }

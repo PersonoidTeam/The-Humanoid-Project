@@ -3,6 +3,7 @@ package com.personoid.humanoid.activites.misc;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.ai.looking.Target;
+import com.personoid.api.npc.Pose;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.types.HandEnum;
 import com.personoid.api.utils.types.Priority;
@@ -27,7 +28,7 @@ public class DanceActivity extends Activity {
     public void onUpdate() {
         if (nextToggleCrouchTick <= 0) {
             nextToggleCrouchTick = MathUtils.random(2, 10);
-            getNPC().setSneaking(!getNPC().getEntity().isSneaking()); // npc.isSneaking
+            getNPC().setPose(getNPC().getPose() == Pose.SNEAKING ? Pose.STANDING : Pose.SNEAKING);
         }
         if (nextPunchTick <= 0) {
             nextPunchTick = MathUtils.random(2, 10);
@@ -46,7 +47,7 @@ public class DanceActivity extends Activity {
 
     @Override
     public void onStop(StopType stopType) {
-        getNPC().setSneaking(false);
+        getNPC().setPose(Pose.STANDING);
         getNPC().getLookController().removeTarget("dance_activity");
     }
 
