@@ -140,17 +140,17 @@ public class FightPlayerActivity extends Activity {
         run(new GoToLocationActivity(targetLoc, movementType));
 
         int attackSpeed = FightingUtils.getAttackSpeed(getNPC().getInventory().getSelectedItem());
-        if (attackCooldown <= offset) {
+        if (attackCooldown <= offset) { // TODO: is entity not occluded by blocks?
             if (!retreating && distance < 3.25) {
                 getNPC().swingHand(HandEnum.RIGHT);
                 double damage = getNPC().getEntity().getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getValue();
                 if (getNPC().getMoveController().getVelocity().getY() < 0) {
-                    damage *= 1.5;
+                    damage *= 1.5F;
                     if (FightingUtils.inSurvival(player)) {
                         FightingUtils.playCriticalHitEffect(player.getLocation());
                     }
                 }
-                getNPC().getEntity().attack(player);
+                player.damage(damage, getNPC().getEntity());
             }
             attackCooldown = attackSpeed;
             offset = MathUtils.random(-10, 0);

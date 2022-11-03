@@ -15,7 +15,6 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class Events implements Listener {
     @EventHandler
@@ -76,7 +75,7 @@ public class Events implements Listener {
     public void onEntityDamage(EntityDamageEvent event) {
         if (event.getEntity() instanceof Player) {
             Player player = (Player) event.getEntity();
-            Bukkit.broadcastMessage(player.getDisplayName() + " took " + event.getDamage() + " damage");
+            Bukkit.broadcastMessage(player.getDisplayName() + " took " + MathUtils.round(event.getDamage(), 2) + " damage");
         }
     }
 
@@ -88,25 +87,24 @@ public class Events implements Listener {
         }
     }
 
+    int iterations = 1;
+
     @EventHandler
     public void onNPCDeath(NPCDeathEvent event) {
         NPC oldNPC = event.getNPC();
-        new BukkitRunnable() {
-            @Override
-            public void run(){
-                Location spawnLocation = oldNPC.getEntity().getBedSpawnLocation();
-                if (spawnLocation == null){
-                    spawnLocation = Bukkit.getServer().getWorlds().get(0).getSpawnLocation();
-                }
-                PersonoidAPI.getRegistry().removeNPC(oldNPC);
-                //ServerboundClientCommandPacket packet = new ServerboundClientCommandPacket(ServerboundClientCommandPacket.Action.PERFORM_RESPAWN);
-                //((CraftPlayer)oldNPC.getEntity()).getHandle().connection.handleClientCommand(packet);
-                NPC newNPC = PersonoidAPI.getRegistry().createNPCInstance("Ham and Cheese", Skin.randomDefault());
-                oldNPC.getBrain().getActivityManager().getRegisteredActivities().forEach(activity -> {
-                    newNPC.getBrain().getActivityManager().register(activity);
-                });
-                PersonoidAPI.getRegistry().spawnNPC(newNPC, spawnLocation);
-            }
-        }.runTaskLater(Humanoid.getPlugin(), MathUtils.random(2 * 20, 4 * 20));
+        Skin skin = oldNPC.getProfile().getSkin();
+        Location bedSpawn = oldNPC.getEntity().getBedSpawnLocation();
+        Location spawnLocation = bedSpawn == null ? Bukkit.getServer().getWorlds().get(0).getSpawnLocation() : bedSpawn;
+        //Bukkit.getScheduler().runTaskLater(Humanoid.getPlugin(), () -> PersonoidAPI.getRegistry().removeNPC(oldNPC), 25);
+        Bukkit.getScheduler().runTaskLater(Humanoid.getPlugin(), () -> {
+            //ServerboundClientCommandPacket packet = new ServerboundClientCommandPacket(ServerboundClientCommandPacket.Action.PERFORM_RESPAWN);
+            //((CraftPlayer)oldNPC.getEntity()).getHandle().connection.handleClientCommand(packet);
+            iterations++;
+            //NPC newNPC = PersonoidAPI.getRegistry().createNPCInstance("Ham and Cheese " + iterations, skin);
+            PersonoidAPI.getRegistry().respawnNPC(oldNPC, spawnLocation);
+/*            oldNPC.getBrain().getActivityManager().getRegisteredActivities().forEach(activity -> {
+                newNPC.getBrain().getActivityManager().register(activity);
+            });*/
+        }, MathUtils.random(2 * 20, 4 * 20));
     }
 }

@@ -113,7 +113,7 @@
             <groupId>com.personoid</groupId>
             <artifactId>PersonoidAPI</artifactId>
             <version>1.0.0</version>
-            <scope>compile</scope>
+            <scope>provided</scope> <!-- compile -->
         </dependency>
     </dependencies>
 </project>

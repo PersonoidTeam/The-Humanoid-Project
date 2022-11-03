@@ -24,8 +24,8 @@ public class CreateNPCCommand extends CommandHandler.Command {
         } else if (args.length == 1) {
             npc = PersonoidAPI.getRegistry().createNPCInstance(args[0], Skin.get("cvjk"));
         } else return false;
+        //npc.getProfile().setTabVisibility(false);
         PersonoidAPI.getRegistry().spawnNPC(npc, sender.getLocation());
-        npc.getProfile().setTabVisibility(false);
         //npc.getNavigation().getPathfinder().getOptions().setUseChunking(false);
         npc.getBrain().getActivityManager().register(
                 new WanderActivity(),
