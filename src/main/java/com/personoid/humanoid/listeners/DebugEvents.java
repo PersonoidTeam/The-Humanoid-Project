@@ -2,7 +2,6 @@ package com.personoid.humanoid.listeners;
 
 import com.personoid.api.pathfinding.Path;
 import com.personoid.api.pathfinding.Pathfinder;
-import com.personoid.api.pathfinding.astar.AstarPathfinder;
 import com.personoid.api.utils.bukkit.Message;
 import com.personoid.api.utils.bukkit.Task;
 import com.personoid.humanoid.Humanoid;
@@ -68,9 +67,9 @@ public class DebugEvents implements Listener {
                 }
                 paths.remove(id);
                 new Message("&b[PathWand] &6Generating path...").send(event.getPlayer());
-                Pathfinder pathfinder = new AstarPathfinder();
-                pathfinder.getOptions().setUseChunking(false);
-                pathfinder.getOptions().setMaxNodeTests(10000);
+                Pathfinder pathfinder = new Pathfinder();
+                pathfinder.getConfig().setUseChunking(false);
+                pathfinder.getConfig().setMaxNodeTests(10000);
                 Path path = pathfinder.getPath(loc1.getBlock().getRelative(BlockFace.UP).getLocation(), loc2.getBlock().getRelative(BlockFace.UP).getLocation());
                 if (path == null) {
                     new Message("&b[PathWand] &cPath not found!").send(event.getPlayer());

@@ -6,10 +6,7 @@ import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.ai.movement.MovementType;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.types.Priority;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
-
-import java.util.logging.LoggingPermission;
 
 public class FollowEntityActivity extends Activity {
     private final Entity entity;
@@ -18,7 +15,7 @@ public class FollowEntityActivity extends Activity {
     public FollowEntityActivity(Entity entity) {
         super(ActivityType.FOLLOWING, Priority.LOW, new BoredomSettings(MathUtils.random(600, 2400), MathUtils.random(2400, 12000)));
         this.entity = entity;
-        this.stoppingDistance = 3;
+        this.stoppingDistance = 1;
     }
 
     public FollowEntityActivity(Entity entity, double stoppingDistance) {
@@ -35,9 +32,9 @@ public class FollowEntityActivity extends Activity {
     @Override
     public void onUpdate() {
         if (getCurrentDuration() % 5 == 0) {
-            GoToLocationActivity.Options options = new GoToLocationActivity.Options();
-            options.setStoppingDistance(stoppingDistance);
-            run(new GoToLocationActivity(entity.getLocation(), MovementType.SPRINT_JUMPING, options));
+            GoToLocationActivity goTo = new GoToLocationActivity(entity.getLocation(), MovementType.SPRINT_JUMPING);
+            goTo.getOptions().setStoppingDistance(stoppingDistance);
+            run(goTo);
         }
     }
 

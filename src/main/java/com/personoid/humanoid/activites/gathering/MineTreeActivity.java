@@ -35,10 +35,8 @@ public class MineTreeActivity extends Activity {
 
     private void mineTree(Block block) {
         Location pathableLoc = LocationUtils.getPathableLocation(block.getLocation(), getNPC().getLocation());
-        GoToLocationActivity.Options options = new GoToLocationActivity.Options();
-        options.setStoppingDistance(3);
-        Bukkit.broadcastMessage("Going to target location: " + LocationUtils.toStringBasic(pathableLoc));
-        run(new GoToLocationActivity(pathableLoc, MovementType.SPRINTING, options).onFinished((result) -> {
+        GoToLocationActivity goTo = new GoToLocationActivity(pathableLoc, MovementType.SPRINTING);
+        goTo.onFinished((result) -> {
             Bukkit.broadcastMessage("Mining tree at: " + LocationUtils.toStringBasic(block.getLocation()));
             if (result.getType() == Result.Type.SUCCESS) {
                 run(new BreakBlockActivity(block).onFinished((result1) -> {
@@ -51,7 +49,10 @@ public class MineTreeActivity extends Activity {
                     }
                 }));
             } else tryFindTree();
-        }));
+        });
+        goTo.getOptions().setStoppingDistance(3);
+        Bukkit.broadcastMessage("Going to target location: " + LocationUtils.toStringBasic(pathableLoc));
+        run(goTo);
     }
 
     @Override

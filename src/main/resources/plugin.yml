@@ -3,6 +3,9 @@ version: '${project.version}'
 main: com.personoid.humanoid.Humanoid
 authors: [ DefineDoddy, notnotnotswipez ]
 description: A plugin aimed at introducing lifelike players to a Minecraft server
+api-version: 1.14
+depend:
+  - Personoid
 commands:
   npc:
     description: Accesses the NPC commands

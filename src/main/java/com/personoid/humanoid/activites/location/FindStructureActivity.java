@@ -57,12 +57,13 @@ public class FindStructureActivity extends Activity {
         travelLoc = new Location(travelLoc.getWorld(), travelLoc.getX(), yLoc, travelLoc.getZ());
         Bukkit.broadcastMessage("Couldn't find " + structureType.getFormattedName() + ", going to " + LocationUtils.toStringBasic(travelLoc));
         attempted.add(travelLoc);
-        GoToLocationActivity.Options options = new GoToLocationActivity.Options();
-        options.setStoppingDistance(3);
-        run(new GoToLocationActivity(travelLoc, MovementType.SPRINTING, options).onFinished((result) -> {
+        GoToLocationActivity goTo = new GoToLocationActivity(travelLoc, MovementType.SPRINTING);
+        goTo.onFinished((result) -> {
             if (result.getType() == Result.Type.FAILURE) Bukkit.broadcastMessage("Couldn't get to target destination");
             checkLocation();
-        }));
+        });
+        goTo.getOptions().setStoppingDistance(3);
+        run(goTo);
     }
 
     // find the closest structure based on a range around the npc, needed blocks, and the radius of the structure

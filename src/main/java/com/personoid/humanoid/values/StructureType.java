@@ -44,7 +44,7 @@ public enum StructureType {
                 Layer leavesLayer = new Layer(Collections.singletonList(new GenericMaterial("leaves")));
                 // combine the layers (bottom -> top)
                 List<Layer> layers = Arrays.asList(logLayer, leavesLayer);
-                // create a reference from the layersw
+                // create a reference from the layers
                 return new StructureReference("tree", new Bounds(6, 7), layers);
             }
         }

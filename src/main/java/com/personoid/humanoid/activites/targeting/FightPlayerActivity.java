@@ -11,6 +11,7 @@ import com.personoid.api.utils.types.Priority;
 import com.personoid.humanoid.Humanoid;
 import com.personoid.humanoid.utils.LocationUtils;
 import com.personoid.humanoid.utils.MathUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -91,27 +92,30 @@ public class FightPlayerActivity extends Activity {
         return false;
     }
 
-    private final int lowHealthValue = MathUtils.random(2, 7);
-    private final double highHealthMod = MathUtils.random(0.75, 1);
-    private final int retreatEndCooldown = MathUtils.random(3 * 20, 7 * 20);
+    private final int lowHealthValue = MathUtils.random(2, 5);
+    private final double highHealthMod = MathUtils.random(0.5, 0.8);
+    private final int retreatEndCooldown = MathUtils.random(3 * 20, 5 * 20);
     private int retreatEndTimer;
 
     private boolean shouldRetreat() {
-        // TODO: get best weapon used by player rather than one currently holding
-        //Bukkit.broadcastMessage("highestDamageTaken: " + highestDamageTaken);
-        boolean tooClose = getNPC().getLocation().distance(player.getLocation()) < 4.2;
-        boolean lowHealth = getNPC().getEntity().getHealth() - Math.min(highestDamageTaken, 19) < lowHealthValue;
-        boolean highHealth = getNPC().getEntity().getHealth() > getNPC().getEntity().getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() * highHealthMod;
-        //Bukkit.broadcastMessage("lowHealth: " + lowHealth);
-        //Bukkit.broadcastMessage("highHealth: " + highHealth);
-        //Bukkit.broadcastMessage("tooClose: " + tooClose);
-        //Bukkit.broadcastMessage("retreat end timer: " + MathUtils.round(retreatEndTimer, 2) + " / " + MathUtils.round(retreatEndCooldown, 2));
+        double maxHealth = getNPC().getEntity().getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+        double health = getNPC().getEntity().getHealth() - Math.min(highestDamageTaken, maxHealth - 1);
+
+        boolean tooClose = getNPC().getLocation().distance(player.getLocation()) < 3;
+        boolean lowHealth = health < lowHealthValue;
+        boolean highHealth = health > maxHealth * highHealthMod;
+
+        Bukkit.broadcastMessage("highestDamageTaken: " + MathUtils.round(highestDamageTaken, 2));
+        Bukkit.broadcastMessage("lowHealth: " + lowHealth);
+        Bukkit.broadcastMessage("highHealth: " + highHealth);
+        Bukkit.broadcastMessage("tooClose: " + tooClose);
+        Bukkit.broadcastMessage("retreat end timer: " + retreatEndTimer + " / " + retreatEndCooldown);
+
         if (retreating) {
             if (highHealth) {
                 return false;
             } else {
-                if (tooClose) return retreatEndTimer < retreatEndCooldown;
-                else return true;
+                return tooClose || retreatEndTimer < retreatEndCooldown;
             }
         } else return lowHealth;
     }
@@ -132,12 +136,15 @@ public class FightPlayerActivity extends Activity {
         this.retreating = retreating;
         //Bukkit.broadcastMessage("retreating: " + retreating);
         Vector direction = player.getLocation().toVector().subtract(getNPC().getLocation().toVector()).normalize();
-        Location retreatLoc = getNPC().getLocation().clone().add(direction.multiply(-1));
+        Location retreatLoc = getNPC().getLocation().clone().add(direction.multiply(-5));
         Location targetLoc = retreating ? retreatLoc : player.getLocation();
 
         MovementType movementType = distance > 4 || retreating ? MovementType.SPRINT_JUMPING : MovementType.SPRINTING;
         getNPC().getLookController().addTarget("fight_target", new Target(targetLoc, Priority.HIGHEST));
-        run(new GoToLocationActivity(targetLoc, movementType));
+        GoToLocationActivity goTo = new GoToLocationActivity(targetLoc, movementType);
+        goTo.getOptions().setStoppingDistance(0.5F);
+        goTo.getOptions().setFaceLocation(false);
+        run(goTo);
 
         int attackSpeed = FightingUtils.getAttackSpeed(getNPC().getInventory().getSelectedItem());
         if (attackCooldown <= offset) { // TODO: is entity not occluded by blocks?
