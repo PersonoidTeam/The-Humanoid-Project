@@ -4,7 +4,7 @@ import com.personoid.api.PersonoidAPI;
 import com.personoid.api.npc.NPC;
 import com.personoid.api.npc.Skin;
 import com.personoid.api.utils.bukkit.Message;
-import com.personoid.humanoid.activites.targeting.FightPlayerActivity;
+import com.personoid.humanoid.activites.gathering.MineTreeActivity;
 import com.personoid.humanoid.features.TestFeature;
 import com.personoid.humanoid.handlers.CommandHandler;
 import org.bukkit.entity.Player;
@@ -19,7 +19,7 @@ public class CreateNPCCommand extends CommandHandler.Command {
     public boolean onCommand(@NotNull Player sender, String[] args) {
         NPC npc;
         if (args.length == 0) {
-            npc = PersonoidAPI.getRegistry().createNPCInstance("Ham and Cheese", Skin.steve());
+            npc = PersonoidAPI.getRegistry().createNPCInstance("Ham and Cheese", Skin.get("cvjk"));
         } else if (args.length == 1) {
             npc = PersonoidAPI.getRegistry().createNPCInstance(args[0], Skin.get("cvjk"));
         } else return false;
@@ -28,14 +28,11 @@ public class CreateNPCCommand extends CommandHandler.Command {
         //npc.getNavigation().getPathfinder().getOptions().setUseChunking(false);
         npc.getBrain().getActivityManager().register(
                 //new WanderActivity()
-                //new MineTreeActivity()
+                new MineTreeActivity()
                 //new FollowEntityActivity(sender)
-                new FightPlayerActivity(sender, FightPlayerActivity.AttackType.ALL, FightPlayerActivity.Strategy.MIXED)
+                //new FightPlayerActivity(sender, FightPlayerActivity.AttackType.ALL, FightPlayerActivity.Strategy.MIXED)
         );
         npc.addFeature(new TestFeature());
-        npc.getNavigation().getOptions().setMovementSmoothing(0.5F);
-        npc.getMoveController().getOptions().setMaxTurn(0.2F);
-        npc.getMoveController().getOptions().setSpeed(1F);
         //npc.getNavigation().getOptions().setStraightLine(true);
         //npc.getLookController().setCanLookAhead(true);
         new Message("&aCreated NPC: &e" + npc.getEntity().getName()).send(sender);

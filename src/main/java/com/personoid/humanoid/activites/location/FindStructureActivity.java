@@ -7,10 +7,7 @@ import com.personoid.api.ai.movement.MovementType;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.math.Range;
-import com.personoid.humanoid.utils.GenericMaterial;
-import com.personoid.humanoid.utils.Layer;
-import com.personoid.humanoid.utils.LocationUtils;
-import com.personoid.humanoid.utils.StructureReference;
+import com.personoid.humanoid.utils.*;
 import com.personoid.humanoid.values.StructureType;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -26,15 +23,18 @@ public class FindStructureActivity extends Activity {
     private final int maxAttempts;
     private final int travelRadius;
     private final int searchRadius;
+    private final SearchType searchType;
 
     private final List<Location> attempted = new ArrayList<>();
 
-    public FindStructureActivity(StructureType structureType, int travelRadius, int searchRadius, int maxAttempts) {
+    public FindStructureActivity(StructureType structureType, int travelRadius,
+                                 int searchRadius, SearchType searchType, int maxAttempts) {
         super(ActivityType.SEARCHING);
         this.structureType = structureType;
         this.travelRadius = travelRadius;
         this.searchRadius = searchRadius;
         this.maxAttempts = maxAttempts;
+        this.searchType = searchType;
     }
 
     @Override
@@ -46,9 +46,9 @@ public class FindStructureActivity extends Activity {
     private void checkLocation() {
         if (attempted.size() >= maxAttempts) markAsFinished(new Result<>(Result.Type.FAILURE, attempted));
         // search for structure that matches the reference
-        Block tree = search(new Range(-searchRadius, searchRadius), SearchType.CLOSEST, structureType.getReference());
-        if (tree != null) {
-            markAsFinished(new Result<>(Result.Type.SUCCESS, tree)); // found a tree -> return result (tree block)
+        Structure structure = search(new Range(-searchRadius, searchRadius), searchType, structureType.getReference());
+        if (structure != null) {
+            markAsFinished(new Result<>(Result.Type.SUCCESS, structure)); // found the structure -> return result
             return;
         }
         Location npcLoc = getNPC().getLocation().clone();
@@ -67,7 +67,8 @@ public class FindStructureActivity extends Activity {
     }
 
     // find the closest structure based on a range around the npc, needed blocks, and the radius of the structure
-    private Block search(Range searchRange, SearchType searchType, StructureReference reference) {
+    private Structure search(Range searchRange, SearchType searchType, StructureReference reference) {
+        List<Block> structure = new ArrayList<>();
         List<GenericMaterial> neededBlocks = new ArrayList<>();
         Location fromLoc = getNPC().getLocation();
         Block chosenStructure = null;
@@ -81,6 +82,7 @@ public class FindStructureActivity extends Activity {
                     if (reference.getLayers().get(0).contains(checkLoc.getBlock().getType())) {
                         int highestY = 0;
                         boolean startHighestY = true;
+                        List<Block> structureBlocks = new ArrayList<>();
                         for (int i = 0; i < reference.getLayers().size(); i++) { // check all other layers
                             Layer layer = reference.getLayers().get(i);
                             neededBlocks.addAll(layer.getMaterials()); // reset needed blocks list
@@ -88,6 +90,7 @@ public class FindStructureActivity extends Activity {
                             if (!startHighestY) validationLoc.setY(highestY + 1);
                             Bukkit.broadcastMessage("Checking " + LocationUtils.toStringBasic(validationLoc));
                             List<Block> foundBlocks = validateLayer(layer, validationLoc.getBlock(), reference);
+                            structureBlocks.addAll(foundBlocks);
                             // remove found blocks from needed blocks list
                             foundBlocks.forEach(block -> neededBlocks.remove(layer.getGenericMaterial(block.getType())));
                             // get highest y pos in found blocks
@@ -112,11 +115,13 @@ public class FindStructureActivity extends Activity {
                                 case CLOSEST: {
                                     if (checkLoc.distance(fromLoc) < chosenStructure.getLocation().distance(fromLoc)) {
                                         chosenStructure = checkLoc.getBlock();
+                                        structure.addAll(structureBlocks);
                                     }
                                 }
                                 case FURTHEST: {
                                     if (checkLoc.distance(fromLoc) > chosenStructure.getLocation().distance(fromLoc)) {
                                         chosenStructure = checkLoc.getBlock();
+                                        structure.addAll(structureBlocks);
                                     }
                                 }
                             }
@@ -126,7 +131,8 @@ public class FindStructureActivity extends Activity {
             }
         }
         Bukkit.broadcastMessage("Found " + (chosenStructure == null ? "no" : "a") + " structure");
-        return chosenStructure;
+        if (structure.isEmpty()) return null;
+        return new Structure(structure);
     }
 
     // look for the rest of the blocks within the layer based on the layer's minimum bounds

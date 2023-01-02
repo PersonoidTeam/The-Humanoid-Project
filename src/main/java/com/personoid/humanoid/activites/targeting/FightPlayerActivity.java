@@ -11,7 +11,6 @@ import com.personoid.api.utils.types.Priority;
 import com.personoid.humanoid.Humanoid;
 import com.personoid.humanoid.utils.LocationUtils;
 import com.personoid.humanoid.utils.MathUtils;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -105,11 +104,11 @@ public class FightPlayerActivity extends Activity {
         boolean lowHealth = health < lowHealthValue;
         boolean highHealth = health > maxHealth * highHealthMod;
 
-        Bukkit.broadcastMessage("highestDamageTaken: " + MathUtils.round(highestDamageTaken, 2));
+/*        Bukkit.broadcastMessage("highestDamageTaken: " + MathUtils.round(highestDamageTaken, 2));
         Bukkit.broadcastMessage("lowHealth: " + lowHealth);
         Bukkit.broadcastMessage("highHealth: " + highHealth);
         Bukkit.broadcastMessage("tooClose: " + tooClose);
-        Bukkit.broadcastMessage("retreat end timer: " + retreatEndTimer + " / " + retreatEndCooldown);
+        Bukkit.broadcastMessage("retreat end timer: " + retreatEndTimer + " / " + retreatEndCooldown);*/
 
         if (retreating) {
             if (highHealth) {
