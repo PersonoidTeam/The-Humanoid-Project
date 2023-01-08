@@ -3,7 +3,6 @@ package com.personoid.humanoid.activites.location;
 import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
-import com.personoid.api.ai.movement.MovementType;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.types.Priority;
 import org.bukkit.entity.Entity;
@@ -32,7 +31,7 @@ public class FollowEntityActivity extends Activity {
     @Override
     public void onUpdate() {
         if (getCurrentDuration() % 5 == 0) {
-            GoToLocationActivity goTo = new GoToLocationActivity(entity.getLocation(), MovementType.SPRINT_JUMPING);
+            GoToLocationActivity goTo = new GoToLocationActivity(entity.getLocation(), GoToLocationActivity.MovementType.SPRINT_JUMP);
             goTo.getOptions().setStoppingDistance(stoppingDistance);
             run(goTo);
         }

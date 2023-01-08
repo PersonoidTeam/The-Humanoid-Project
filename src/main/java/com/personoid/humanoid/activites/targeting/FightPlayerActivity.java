@@ -4,7 +4,6 @@ import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.ai.looking.Target;
-import com.personoid.api.ai.movement.MovementType;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.types.HandEnum;
 import com.personoid.api.utils.types.Priority;
@@ -138,7 +137,8 @@ public class FightPlayerActivity extends Activity {
         Location retreatLoc = getNPC().getLocation().clone().add(direction.multiply(-5));
         Location targetLoc = retreating ? retreatLoc : player.getLocation();
 
-        MovementType movementType = distance > 4 || retreating ? MovementType.SPRINT_JUMPING : MovementType.SPRINTING;
+        GoToLocationActivity.MovementType movementType = distance > 4 || retreating ?
+                GoToLocationActivity.MovementType.SPRINT_JUMP : GoToLocationActivity.MovementType.SPRINT;
         getNPC().getLookController().addTarget("fight_target", new Target(targetLoc, Priority.HIGHEST));
         GoToLocationActivity goTo = new GoToLocationActivity(targetLoc, movementType);
         goTo.getOptions().setStoppingDistance(0.5F);

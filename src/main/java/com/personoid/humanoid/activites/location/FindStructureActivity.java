@@ -3,7 +3,6 @@ package com.personoid.humanoid.activites.location;
 import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
-import com.personoid.api.ai.movement.MovementType;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.math.Range;
@@ -57,7 +56,7 @@ public class FindStructureActivity extends Activity {
         travelLoc = new Location(travelLoc.getWorld(), travelLoc.getX(), yLoc, travelLoc.getZ());
         Bukkit.broadcastMessage("Couldn't find " + structureType.getFormattedName() + ", going to " + LocationUtils.toStringBasic(travelLoc));
         attempted.add(travelLoc);
-        GoToLocationActivity goTo = new GoToLocationActivity(travelLoc, MovementType.SPRINTING);
+        GoToLocationActivity goTo = new GoToLocationActivity(travelLoc, GoToLocationActivity.MovementType.SPRINT);
         goTo.onFinished((result) -> {
             if (result.getType() == Result.Type.FAILURE) Bukkit.broadcastMessage("Couldn't get to target destination");
             checkLocation();

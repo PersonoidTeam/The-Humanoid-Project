@@ -4,7 +4,6 @@ import com.personoid.api.activities.BreakBlockActivity;
 import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
-import com.personoid.api.ai.movement.MovementType;
 import com.personoid.api.utils.Result;
 import com.personoid.humanoid.activites.location.FindStructureActivity;
 import com.personoid.humanoid.utils.GenericMaterial;
@@ -49,7 +48,7 @@ public class MineTreeActivity extends Activity {
         Bukkit.broadcastMessage("--- MINELOGFROMTREE - logs.size(): " + logs.size());
         Bukkit.broadcastMessage("--- MINELOGFROMTREE - Mining log at: " + LocationUtils.toStringBasic(block.getLocation()));
         Bukkit.broadcastMessage("--- MINELOGFROMTREE - Pathable loc: " + LocationUtils.toStringBasic(pathableLoc));
-        GoToLocationActivity goTo = new GoToLocationActivity(pathableLoc, MovementType.SPRINTING);
+        GoToLocationActivity goTo = new GoToLocationActivity(pathableLoc, GoToLocationActivity.MovementType.SPRINT);
         goTo.onFinished((result) -> {
             //Bukkit.broadcastMessage("Mining log at: " + LocationUtils.toStringBasic(block.getLocation()));
             if (result.getType() == Result.Type.SUCCESS) {
