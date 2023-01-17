@@ -141,12 +141,12 @@ public class FightPlayerActivity extends Activity {
                 GoToLocationActivity.MovementType.SPRINT_JUMP : GoToLocationActivity.MovementType.SPRINT;
         getNPC().getLookController().addTarget("fight_target", new Target(targetLoc, Priority.HIGHEST));
         GoToLocationActivity goTo = new GoToLocationActivity(targetLoc, movementType);
-        goTo.getOptions().setStoppingDistance(0.5F);
+        goTo.getOptions().setStoppingDistance(2F);
         goTo.getOptions().setFaceLocation(false);
         run(goTo);
 
         int attackSpeed = FightingUtils.getAttackSpeed(getNPC().getInventory().getSelectedItem());
-        if (attackCooldown <= offset) { // TODO: is entity not occluded by blocks?
+        if (attackCooldown <= offset && distance < 4 && !getNPC().getBrain().getOpticsManager().isOccluded(player)) {
             if (!retreating && distance < 3.25) {
                 getNPC().swingHand(HandEnum.RIGHT);
                 double damage = getNPC().getEntity().getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getValue();
@@ -163,8 +163,11 @@ public class FightPlayerActivity extends Activity {
         } else {
             if (attackCooldown < 10 + offset) getNPC().getMoveController().jump();
             boolean shieldDisabled = getNPC().getItemCooldown(Material.SHIELD) > 0;
-            if (attackCooldown > 2 + offset && attackCooldown < attackSpeed - 5 && !shieldDisabled && distance < 4) getNPC().startUsingItem(HandEnum.LEFT);
-            else getNPC().stopUsingItem();
+            if (attackCooldown > 2 + offset && attackCooldown < attackSpeed - 5 && !shieldDisabled && distance < 4 && !retreating) {
+                getNPC().startUsingItem(HandEnum.LEFT);
+            } else {
+                getNPC().stopUsingItem();
+            }
             attackCooldown--;
         }
         lastHealth = getNPC().getEntity().getHealth();

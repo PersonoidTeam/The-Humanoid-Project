@@ -4,12 +4,13 @@ import org.bukkit.block.Block;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Structure {
     private final List<Block> blocks;
 
     public Structure(List<Block> blocks) {
-        this.blocks = blocks;
+        this.blocks = blocks.stream().distinct().collect(Collectors.toList());
     }
 
     public List<Block> getBlocks() {

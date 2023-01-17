@@ -38,6 +38,7 @@ public class MineTreeActivity extends Activity {
                 logs = tree.getBlocksFrom(new GenericMaterial("log"), Structure.Direction.UP);
                 currentLogIndex = 0;
                 mineLogFromTree(logs.get(currentLogIndex));
+                Bukkit.broadcastMessage("mining tree");
             }
         }));
     }
@@ -48,10 +49,17 @@ public class MineTreeActivity extends Activity {
         Bukkit.broadcastMessage("--- MINELOGFROMTREE - logs.size(): " + logs.size());
         Bukkit.broadcastMessage("--- MINELOGFROMTREE - Mining log at: " + LocationUtils.toStringBasic(block.getLocation()));
         Bukkit.broadcastMessage("--- MINELOGFROMTREE - Pathable loc: " + LocationUtils.toStringBasic(pathableLoc));
-        GoToLocationActivity goTo = new GoToLocationActivity(pathableLoc, GoToLocationActivity.MovementType.SPRINT);
+        GoToLocationActivity goTo = new GoToLocationActivity(pathableLoc, GoToLocationActivity.MovementType.SPRINT) {
+            @Override
+            public void onStart(StartType startType) {
+                super.onStart(startType);
+                Bukkit.broadcastMessage("--- MINELOGFROMTREE - onStart");
+            }
+        };
         goTo.onFinished((result) -> {
             //Bukkit.broadcastMessage("Mining log at: " + LocationUtils.toStringBasic(block.getLocation()));
             if (result.getType() == Result.Type.SUCCESS) {
+                Bukkit.broadcastMessage("--- MINELOGFROMTREE - successfully travelled to log");
                 run(new BreakBlockActivity(block).onFinished((result1) -> {
                     if (result1.getType() == Result.Type.SUCCESS) {
                         Bukkit.broadcastMessage("Mined log successfully!");
