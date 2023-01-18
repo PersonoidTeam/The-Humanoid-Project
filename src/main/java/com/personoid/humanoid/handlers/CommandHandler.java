@@ -25,6 +25,7 @@ public class CommandHandler implements CommandExecutor {
 
         registerCommand(new CreateNPCCommand());
         registerCommand(new RemoveNPCCommand());
+        registerCommand(new PurgeNPCsCommand());
         registerCommand(new TestLocationCommand());
         registerCommand(new ProfilerMessageCommand());
         registerCommand(new PathWandCommand());

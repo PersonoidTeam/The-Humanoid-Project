@@ -19,9 +19,9 @@ public class CreateNPCCommand extends CommandHandler.Command {
     public boolean onCommand(@NotNull Player sender, String[] args) {
         NPC npc;
         if (args.length == 0) {
-            npc = PersonoidAPI.getRegistry().createNPCInstance("Ham and Cheese", Skin.get("cvjk"));
+            npc = PersonoidAPI.getRegistry().createNPCInstance("Ham and Cheese", Skin.get("subbway"));
         } else if (args.length == 1) {
-            npc = PersonoidAPI.getRegistry().createNPCInstance(args[0], Skin.get("cvjk"));
+            npc = PersonoidAPI.getRegistry().createNPCInstance(args[0], Skin.get("subbway"));
         } else return false;
         npc.getProfile().setTabVisibility(false);
         PersonoidAPI.getRegistry().spawnNPC(npc, sender.getLocation());

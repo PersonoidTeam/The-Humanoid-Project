@@ -8,7 +8,6 @@ import com.personoid.api.utils.Result;
 import com.personoid.api.utils.types.HandEnum;
 import com.personoid.api.utils.types.Priority;
 import com.personoid.humanoid.Humanoid;
-import com.personoid.humanoid.utils.LocationUtils;
 import com.personoid.humanoid.utils.MathUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -35,7 +34,7 @@ public class FightPlayerActivity extends Activity {
 
     @Override
     public void onStart(StartType startType) {
-        getNPC().getLookController().addTarget("fight_target", new Target(player, Priority.HIGHEST));
+        getNPC().getLookController().addTarget("fight_target", new Target(player, Priority.HIGH));
         getNPC().getInventory().addItem(new ItemStack(Material.STONE_AXE));
         getNPC().getInventory().setOffhand(new ItemStack(Material.SHIELD));
         switchToItem(getBestWeapon());
@@ -123,7 +122,6 @@ public class FightPlayerActivity extends Activity {
     @Override
     public void onUpdate() {
         if (checkWinStatus()) return;
-        player = LocationUtils.getClosestPlayer(getNPC().getLocation());
 
         if (lastHealth - getNPC().getEntity().getHealth() > highestDamageTaken) {
             highestDamageTaken = lastHealth - getNPC().getEntity().getHealth();
@@ -139,14 +137,14 @@ public class FightPlayerActivity extends Activity {
 
         GoToLocationActivity.MovementType movementType = distance > 4 || retreating ?
                 GoToLocationActivity.MovementType.SPRINT_JUMP : GoToLocationActivity.MovementType.SPRINT;
-        getNPC().getLookController().addTarget("fight_target", new Target(targetLoc, Priority.HIGHEST));
         GoToLocationActivity goTo = new GoToLocationActivity(targetLoc, movementType);
         goTo.getOptions().setStoppingDistance(2F);
-        goTo.getOptions().setFaceLocation(false);
+        goTo.getOptions().setFaceLocation(distance > 8 || retreating, Priority.HIGHEST);
         run(goTo);
 
         int attackSpeed = FightingUtils.getAttackSpeed(getNPC().getInventory().getSelectedItem());
-        if (attackCooldown <= offset && distance < 4 && !getNPC().getBrain().getOpticsManager().isOccluded(player)) {
+        boolean hasLineofSight = getNPC().getBrain().getOpticsManager().hasLineOfSight(player);
+        if (attackCooldown <= offset && distance < 4 && hasLineofSight) {
             if (!retreating && distance < 3.25) {
                 getNPC().swingHand(HandEnum.RIGHT);
                 double damage = getNPC().getEntity().getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getValue();
@@ -160,7 +158,7 @@ public class FightPlayerActivity extends Activity {
             }
             attackCooldown = attackSpeed;
             offset = MathUtils.random(-10, 0);
-        } else {
+        } else if (hasLineofSight) {
             if (attackCooldown < 10 + offset) getNPC().getMoveController().jump();
             boolean shieldDisabled = getNPC().getItemCooldown(Material.SHIELD) > 0;
             if (attackCooldown > 2 + offset && attackCooldown < attackSpeed - 5 && !shieldDisabled && distance < 4 && !retreating) {
