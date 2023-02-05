@@ -4,7 +4,7 @@ import com.personoid.api.PersonoidAPI;
 import com.personoid.api.npc.NPC;
 import com.personoid.api.npc.Skin;
 import com.personoid.api.utils.bukkit.Message;
-import com.personoid.humanoid.activites.targeting.FightPlayerActivity;
+import com.personoid.humanoid.activites.location.FollowEntityActivity;
 import com.personoid.humanoid.features.TestFeature;
 import com.personoid.humanoid.handlers.CommandHandler;
 import org.bukkit.entity.Player;
@@ -26,11 +26,12 @@ public class CreateNPCCommand extends CommandHandler.Command {
         npc.getProfile().setTabVisibility(false);
         PersonoidAPI.getRegistry().spawnNPC(npc, sender.getLocation());
         //npc.getNavigation().getPathfinder().getOptions().setUseChunking(false);
+        npc.getNavigation().getOptions().setShowPath(true);
         npc.getBrain().getActivityManager().register(
                 //new WanderActivity()
                 //new MineTreeActivity()
-                //new FollowEntityActivity(sender)
-                new FightPlayerActivity(sender, FightPlayerActivity.AttackType.ALL, FightPlayerActivity.Strategy.MIXED)
+                new FollowEntityActivity(sender)
+                //new FightPlayerActivity(sender, FightPlayerActivity.AttackType.ALL, FightPlayerActivity.Strategy.MIXED)
                 //new DanceActivity()
         );
         npc.addFeature(new TestFeature());

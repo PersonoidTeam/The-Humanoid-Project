@@ -2,8 +2,8 @@ package com.personoid.humanoid.activites.targeting;
 
 import com.google.common.collect.Multimap;
 import com.personoid.api.utils.Parameter;
-import com.personoid.api.utils.packet.Packages;
-import com.personoid.api.utils.packet.ReflectionUtils;
+import com.personoid.nms.packet.Packages;
+import com.personoid.nms.packet.ReflectionUtils;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Sound;
