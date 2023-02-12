@@ -1,5 +1,6 @@
 package com.personoid.humanoid.listeners;
 
+import com.personoid.api.pathfinding.BlockPos;
 import com.personoid.api.pathfinding.Path;
 import com.personoid.api.pathfinding.Pathfinder;
 import com.personoid.api.utils.bukkit.Message;
@@ -7,7 +8,6 @@ import com.personoid.api.utils.bukkit.Task;
 import com.personoid.humanoid.Humanoid;
 import com.personoid.humanoid.utils.LocationUtils;
 import org.bukkit.*;
-import org.bukkit.block.BlockFace;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -60,7 +60,8 @@ public class DebugEvents implements Listener {
                 int id = data.get(pathwandKey, PersistentDataType.INTEGER);
                 if (paths.containsKey(id)) {
                     Path path = paths.get(id);
-                    if (path.getNode(0).getLocation().equals(loc1) && path.getNode(path.size() - 1).getLocation().equals(loc2)) {
+                    if (path.getNode(0).getBlockPos().toLocation(loc1.getWorld()).equals(loc1) &&
+                            path.getNode(path.size() - 1).getBlockPos().toLocation(loc2.getWorld()).equals(loc2)) {
                         new Message("&b[PathWand] &cPath is already in memory!").send(event.getPlayer());
                         return;
                     }
@@ -70,7 +71,7 @@ public class DebugEvents implements Listener {
                 Pathfinder pathfinder = new Pathfinder();
                 pathfinder.getConfig().setUseChunking(false);
                 pathfinder.getConfig().setMaxNodeTests(10000);
-                Path path = pathfinder.getPath(loc1.getBlock().getRelative(BlockFace.UP).getLocation(), loc2.getBlock().getRelative(BlockFace.UP).getLocation());
+                Path path = pathfinder.getPath(BlockPos.fromLocation(loc1).above(), BlockPos.fromLocation(loc2).above(), loc1.getWorld());
                 if (path == null) {
                     new Message("&b[PathWand] &cPath not found!").send(event.getPlayer());
                     return;
@@ -89,7 +90,7 @@ public class DebugEvents implements Listener {
                                         if (entry.getValue().size() > 0) {
                                             for (int i = 0; i < entry.getValue().size(); i++) {
                                                 player.getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, entry.getValue().getNode(i)
-                                                        .getLocation().clone().add(0.5, 0, 0.5), 5,
+                                                        .getBlockPos().toLocation(player.getWorld()).clone().add(0.5, 0, 0.5), 5,
                                                         new Particle.DustTransition(Color.RED, Color.ORANGE, 1));
                                             }
                                         }
