@@ -45,7 +45,7 @@ public enum StructureType {
                 // combine the layers (bottom -> top)
                 List<Layer> layers = Arrays.asList(logLayer, leavesLayer);
                 // create a reference from the layers
-                return new StructureReference("tree", new Bounds(6, 7), layers);
+                return new StructureReference("tree", new Bounds(1, 7), layers);
             }
         }
         return null;

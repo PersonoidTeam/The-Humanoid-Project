@@ -14,11 +14,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MineTreeActivity extends Activity {
+    private Structure tree;
     private List<Block> logs;
     private int currentLogIndex = 0;
+    private List<Structure> exclusions = new ArrayList<>();
 
     public MineTreeActivity() {
         super(ActivityType.GATHERING);
@@ -31,35 +34,35 @@ public class MineTreeActivity extends Activity {
 
     private void tryFindTree() {
         run(new FindStructureActivity(StructureType.TREE, 50, 20,
-                FindStructureActivity.SearchType.CLOSEST, 8).onFinished((result) -> {
+                FindStructureActivity.SearchType.CLOSEST, 8, exclusions).onFinished((result) -> {
             if (result.getType() == Result.Type.SUCCESS) {
-                Structure tree = result.getResult(Structure.class);
+                tree = result.getResult(Structure.class);
                 Bukkit.broadcastMessage("Found tree at: " + LocationUtils.toStringBasic(tree.getOrigin().getLocation()));
                 logs = tree.getBlocksFrom(new GenericMaterial("log"), Structure.Direction.UP);
                 currentLogIndex = 0;
                 mineLogFromTree(logs.get(currentLogIndex));
-                Bukkit.broadcastMessage("mining tree");
+                Bukkit.broadcastMessage("Mining tree...");
             }
         }));
     }
 
     private void mineLogFromTree(Block block) {
-        Location pathableLoc = LocationUtils.getPathableLocation(block.getLocation(), 5);
-        Bukkit.broadcastMessage("--- MINELOGFROMTREE - currentLogIndex: " + currentLogIndex);
+        Location pathableLoc = LocationUtils.getPathableLocation(getNPC().getLocation(), block.getLocation(), 5);
+/*        Bukkit.broadcastMessage("--- MINELOGFROMTREE - currentLogIndex: " + currentLogIndex);
         Bukkit.broadcastMessage("--- MINELOGFROMTREE - logs.size(): " + logs.size());
         Bukkit.broadcastMessage("--- MINELOGFROMTREE - Mining log at: " + LocationUtils.toStringBasic(block.getLocation()));
-        Bukkit.broadcastMessage("--- MINELOGFROMTREE - Pathable loc: " + LocationUtils.toStringBasic(pathableLoc));
-        GoToLocationActivity goTo = new GoToLocationActivity(pathableLoc, GoToLocationActivity.MovementType.SPRINT) {
-            @Override
-            public void onStart(StartType startType) {
-                super.onStart(startType);
-                Bukkit.broadcastMessage("--- MINELOGFROMTREE - onStart");
-            }
-        };
+        Bukkit.broadcastMessage("--- MINELOGFROMTREE - Pathable loc: " + LocationUtils.toStringBasic(pathableLoc));*/
+        if (pathableLoc == null) {
+            Bukkit.broadcastMessage("Can't path to tree");
+            exclusions.add(tree);
+            tryFindTree();
+            return;
+        }
+        GoToLocationActivity goTo = new GoToLocationActivity(pathableLoc, GoToLocationActivity.MovementType.SPRINT);
         goTo.onFinished((result) -> {
             //Bukkit.broadcastMessage("Mining log at: " + LocationUtils.toStringBasic(block.getLocation()));
             if (result.getType() == Result.Type.SUCCESS) {
-                Bukkit.broadcastMessage("--- MINELOGFROMTREE - successfully travelled to log");
+                //Bukkit.broadcastMessage("--- MINELOGFROMTREE - successfully travelled to log");
                 run(new BreakBlockActivity(block).onFinished((result1) -> {
                     if (result1.getType() == Result.Type.SUCCESS) {
                         Bukkit.broadcastMessage("Mined log successfully!");

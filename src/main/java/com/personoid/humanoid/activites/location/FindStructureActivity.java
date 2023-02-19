@@ -23,17 +23,19 @@ public class FindStructureActivity extends Activity {
     private final int travelRadius;
     private final int searchRadius;
     private final SearchType searchType;
+    private final List<Structure> excludes;
 
     private final List<Location> attempted = new ArrayList<>();
 
     public FindStructureActivity(StructureType structureType, int travelRadius,
-                                 int searchRadius, SearchType searchType, int maxAttempts) {
+                                 int searchRadius, SearchType searchType, int maxAttempts, List<Structure> excludes) {
         super(ActivityType.SEARCHING);
         this.structureType = structureType;
         this.travelRadius = travelRadius;
         this.searchRadius = searchRadius;
         this.maxAttempts = maxAttempts;
         this.searchType = searchType;
+        this.excludes = excludes;
     }
 
     @Override
@@ -79,6 +81,12 @@ public class FindStructureActivity extends Activity {
                     int validLayers = 0;
                     breakpoint:
                     if (reference.getLayers().get(0).contains(checkLoc.getBlock().getType())) {
+                        Location tempCheckLoc = checkLoc.clone();
+                        for (int i = 0; i < reference.getBounds().getY(); i++) {
+                            if (reference.getLayers().get(0).contains(tempCheckLoc.clone().subtract(0, i, 0).getBlock().getType())) {
+                                checkLoc = checkLoc.clone().subtract(0, 1, 0);
+                            }
+                        }
                         int highestY = 0;
                         boolean startHighestY = true;
                         List<Block> structureBlocks = new ArrayList<>();
@@ -87,44 +95,61 @@ public class FindStructureActivity extends Activity {
                             neededBlocks.addAll(layer.getMaterials()); // reset needed blocks list
                             Location validationLoc = checkLoc.clone();
                             if (!startHighestY) validationLoc.setY(highestY + 1);
-                            Bukkit.broadcastMessage("Checking " + LocationUtils.toStringBasic(validationLoc));
+                            //Bukkit.broadcastMessage("Checking " + LocationUtils.toStringBasic(validationLoc));
                             List<Block> foundBlocks = validateLayer(layer, validationLoc.getBlock(), reference);
-                            structureBlocks.addAll(foundBlocks);
+                            structureBlocks.addAll(captureLayer(layer, validationLoc.getBlock(), reference));
                             // remove found blocks from needed blocks list
                             foundBlocks.forEach(block -> neededBlocks.remove(layer.getGenericMaterial(block.getType())));
                             // get highest y pos in found blocks
                             for (Block block : foundBlocks) if (block.getY() > highestY) highestY = block.getY();
                             startHighestY = false;
-                            Bukkit.broadcastMessage("Highest y pos in found blocks: " + highestY);
+                            //Bukkit.broadcastMessage("Highest y pos in found blocks: " + highestY);
                             if (neededBlocks.isEmpty()) { // found all the blocks in the layer
                                 String postfixMsg = i == reference.getLayers().size() - 1 ?
                                         ". All layers validated" : ", validating other layers...";
-                                Bukkit.broadcastMessage("Found all blocks in layer " + (i + 1) + postfixMsg);
+                                //Bukkit.broadcastMessage("Found all blocks in layer " + (i + 1) + postfixMsg);
                                 validLayers++;
                             } else { // didn't find all the blocks in the layer
-                                Bukkit.broadcastMessage("Didn't find all blocks in layer " + (i + 1) + ", searching another location...");
+                                //Bukkit.broadcastMessage("Didn't find all blocks in layer " + (i + 1) + ", searching another location...");
                                 neededBlocks.clear();
                                 break breakpoint;
                             }
                         }
-                        if (validLayers != reference.getLayers().size()) break;
+                        if (validLayers < reference.getLayers().size()) break;
+                        //Bukkit.broadcastMessage("--FOUND ALL LAYERS--");
                         // if we passed the for loop then we have found a matching structure
+                        boolean inExclusions = false;
+                        for (Structure exclusion : excludes) {
+                            if (exclusion.getBlocks().get(0) == structureBlocks.get(0)) {
+                                inExclusions = true;
+                                break;
+                            }
+                        }
                         if (chosenStructure != null) {
                             switch (searchType) { // compare to the current chosen structure based on the search type
                                 case CLOSEST: {
-                                    if (checkLoc.distance(fromLoc) < chosenStructure.getLocation().distance(fromLoc)) {
+                                    boolean closerDist = checkLoc.distance(fromLoc) < chosenStructure.getLocation().distance(fromLoc);
+                                    if (closerDist && !inExclusions) {
                                         chosenStructure = checkLoc.getBlock();
+                                        structure.clear();
                                         structure.addAll(structureBlocks);
+                                        //Bukkit.broadcastMessage("Found a closer structure");
                                     }
                                 }
                                 case FURTHEST: {
-                                    if (checkLoc.distance(fromLoc) > chosenStructure.getLocation().distance(fromLoc)) {
+                                    boolean furtherDist = checkLoc.distance(fromLoc) > chosenStructure.getLocation().distance(fromLoc);
+                                    if (furtherDist && !inExclusions) {
                                         chosenStructure = checkLoc.getBlock();
+                                        structure.clear();
                                         structure.addAll(structureBlocks);
                                     }
                                 }
                             }
-                        } else chosenStructure = checkLoc.getBlock(); // first structure found
+                        } else if (!inExclusions) {
+                            chosenStructure = checkLoc.getBlock(); // first structure found
+                            structure.addAll(structureBlocks);
+                            //Bukkit.broadcastMessage("Found first structure: " + structureBlocks.size());
+                        }
                     }
                 }
             }
@@ -192,7 +217,32 @@ public class FindStructureActivity extends Activity {
                 found.addAll(tempWidthList);
             }
         }
-        Bukkit.broadcastMessage("Found total of " + found.size() + " blocks within layer");
+        //Bukkit.broadcastMessage("Found total of " + found.size() + " blocks within layer");
+        return found;
+    }
+
+    /** @return the blocks found within the layer **/
+    private List<Block> captureLayer(Layer layer, Block from, StructureReference reference) {
+        List<Block> found = new ArrayList<>();
+        int searchBoundsXz = reference.getBounds().getXz();
+        int searchBoundsY = reference.getBounds().getY();
+        int lowestYPosBlock = Integer.MAX_VALUE;
+        for (int x = -searchBoundsXz; x < searchBoundsXz; x++) {
+            for (int y = 0; y < searchBoundsY; y++) {
+                for (int z = -searchBoundsXz; z < searchBoundsXz; z++) {
+                    Location checkLoc = from.getLocation().clone().add(x, y, z);
+                    Material material = checkLoc.getBlock().getType();
+                    if (layer.contains(material)) { // found a block within the layer
+                        //Bukkit.broadcastMessage("Found block within layer: " + material.name());
+                        if (layer.getBounds() != null) {
+                            found.add(checkLoc.getBlock()); // if the minimum bounds given are greater than one block tall
+                            if (lowestYPosBlock > checkLoc.getBlockY()) lowestYPosBlock = checkLoc.getBlockY();
+                        }
+                        else found.add(checkLoc.getBlock());
+                    }
+                }
+            }
+        }
         return found;
     }
 
