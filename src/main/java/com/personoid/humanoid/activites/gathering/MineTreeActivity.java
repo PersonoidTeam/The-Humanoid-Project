@@ -5,14 +5,15 @@ import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.utils.Result;
+import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.math.Range;
 import com.personoid.api.utils.types.Priority;
 import com.personoid.humanoid.activites.location.FindStructureActivity;
 import com.personoid.humanoid.material.GenericMaterial;
 import com.personoid.humanoid.material.filters.NameMaterialFilter;
 import com.personoid.humanoid.structure.Structure;
+import com.personoid.humanoid.structure.StructureRef;
 import com.personoid.humanoid.structure.detection.StructureLocator;
-import com.personoid.humanoid.structure.structures.StructurePreset;
 import com.personoid.humanoid.utils.LocationUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -22,22 +23,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MineTreeActivity extends Activity {
-    private static final StructureLocator LOCATOR = new StructureLocator(
-            StructurePreset.SMALL_TREE_ANY.getReference(),
-            StructureLocator.SearchType.CLOSEST,
-            new Range(-20, 20)
-    );
+    private final StructureLocator locator;
+    private final int retryTime;
 
     private Structure tree;
     private List<Block> logs;
-    private int currentLogIndex = 0;
+    private int currentLogIndex;
     private final List<Structure> exclusions = new ArrayList<>();
-    private final int retryTime;
     private int retryTimer;
     private boolean findingTree;
 
-    public MineTreeActivity(int retryTime) {
-        super(ActivityType.GATHERING);
+    public MineTreeActivity(StructureRef type, int retryTime) {
+        super(ActivityType.GATHERING, new BoredomSettings(MathUtils.random(1200, 6000), MathUtils.random(3600, 12000)));
+        locator = new StructureLocator(type, StructureLocator.SearchType.CLOSEST, new Range(-20, 20));
         this.retryTime = retryTime;
     }
 
@@ -47,8 +45,8 @@ public class MineTreeActivity extends Activity {
     }
 
     private void tryFindTree() {
-        run(new FindStructureActivity(LOCATOR, exclusions, 50, 8).onFinished((result) -> {
-            findingTree = true;
+        findingTree = true;
+        run(new FindStructureActivity(locator, exclusions, 50, 8).onFinished((result) -> {
             if (result.getType() == Result.Type.SUCCESS) {
                 tree = result.getResult(Structure.class);
                 Bukkit.broadcastMessage("Found tree at: " + LocationUtils.toStringBasic(tree.getOrigin().getLocation()));

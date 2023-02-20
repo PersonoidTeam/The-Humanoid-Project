@@ -5,8 +5,11 @@ import com.personoid.api.npc.NPC;
 import com.personoid.api.npc.Skin;
 import com.personoid.api.utils.bukkit.Message;
 import com.personoid.humanoid.activites.gathering.MineTreeActivity;
+import com.personoid.humanoid.activites.location.WanderActivity;
+import com.personoid.humanoid.activites.misc.DanceActivity;
 import com.personoid.humanoid.features.TestFeature;
 import com.personoid.humanoid.handlers.CommandHandler;
+import com.personoid.humanoid.structure.structures.StructurePreset;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,11 +31,12 @@ public class CreateNPCCommand extends CommandHandler.Command {
         //npc.getNavigation().getPathfinder().getConfig().setUseChunking(false);
         npc.getNavigation().getOptions().setShowPath(true);
         npc.getBrain().getActivityManager().register(
-                //new WanderActivity()
-                new MineTreeActivity(20)
+                new WanderActivity(),
+                new MineTreeActivity(StructurePreset.SMALL_TREE_OAK.getReference(), 20),
+                new MineTreeActivity(StructurePreset.LARGE_TREE_OAK.getReference(), 20),
                 //new FollowEntityActivity(sender)
                 //new FightPlayerActivity(sender, FightPlayerActivity.AttackType.ALL, FightPlayerActivity.Strategy.MIXED)
-                //new DanceActivity()
+                new DanceActivity()
         );
         npc.addFeature(new TestFeature());
         //npc.getNavigation().getOptions().setStraightLine(true);

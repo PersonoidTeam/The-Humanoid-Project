@@ -3,11 +3,14 @@ package com.personoid.humanoid.structure.structures;
 import com.personoid.humanoid.material.WoodSet;
 import com.personoid.humanoid.material.filters.WoodSetMaterialFilter;
 import com.personoid.humanoid.structure.StructureRef;
+import com.personoid.humanoid.structure.structures.nature.LargeTreeStructure;
 import com.personoid.humanoid.structure.structures.nature.SmallTreeStructure;
 
 public enum StructurePreset {
     SMALL_TREE_ANY(new SmallTreeStructure("any", new WoodSetMaterialFilter(WoodSet.ALL))),
-    SMALL_TREE_OAK(new SmallTreeStructure("oak", new WoodSetMaterialFilter(WoodSet.OAK)));
+    SMALL_TREE_OAK(new SmallTreeStructure("oak", new WoodSetMaterialFilter(WoodSet.OAK))),
+    LARGE_TREE_ANY(new LargeTreeStructure("any", new WoodSetMaterialFilter(WoodSet.ALL))),
+    LARGE_TREE_OAK(new LargeTreeStructure("oak", new WoodSetMaterialFilter(WoodSet.OAK)));
 
     private final StructureRef reference;
 
