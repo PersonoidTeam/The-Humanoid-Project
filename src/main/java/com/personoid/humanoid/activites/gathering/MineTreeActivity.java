@@ -5,11 +5,15 @@ import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.utils.Result;
+import com.personoid.api.utils.math.Range;
+import com.personoid.api.utils.types.Priority;
 import com.personoid.humanoid.activites.location.FindStructureActivity;
-import com.personoid.humanoid.utils.GenericMaterial;
+import com.personoid.humanoid.material.GenericMaterial;
+import com.personoid.humanoid.material.filters.NameMaterialFilter;
+import com.personoid.humanoid.structure.Structure;
+import com.personoid.humanoid.structure.detection.StructureLocator;
+import com.personoid.humanoid.structure.structures.StructurePreset;
 import com.personoid.humanoid.utils.LocationUtils;
-import com.personoid.humanoid.utils.Structure;
-import com.personoid.humanoid.values.StructureType;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -18,13 +22,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MineTreeActivity extends Activity {
+    private static final StructureLocator LOCATOR = new StructureLocator(
+            StructurePreset.SMALL_TREE_ANY.getReference(),
+            StructureLocator.SearchType.CLOSEST,
+            new Range(-20, 20)
+    );
+
     private Structure tree;
     private List<Block> logs;
     private int currentLogIndex = 0;
-    private List<Structure> exclusions = new ArrayList<>();
+    private final List<Structure> exclusions = new ArrayList<>();
+    private final int retryTime;
+    private int retryTimer;
+    private boolean findingTree;
 
-    public MineTreeActivity() {
+    public MineTreeActivity(int retryTime) {
         super(ActivityType.GATHERING);
+        this.retryTime = retryTime;
     }
 
     @Override
@@ -33,15 +47,14 @@ public class MineTreeActivity extends Activity {
     }
 
     private void tryFindTree() {
-        run(new FindStructureActivity(StructureType.TREE, 50, 20,
-                FindStructureActivity.SearchType.CLOSEST, 8, exclusions).onFinished((result) -> {
+        run(new FindStructureActivity(LOCATOR, exclusions, 50, 8).onFinished((result) -> {
+            findingTree = true;
             if (result.getType() == Result.Type.SUCCESS) {
                 tree = result.getResult(Structure.class);
                 Bukkit.broadcastMessage("Found tree at: " + LocationUtils.toStringBasic(tree.getOrigin().getLocation()));
-                logs = tree.getBlocksFrom(new GenericMaterial("log"), Structure.Direction.UP);
+                logs = tree.getBlocksFrom(new GenericMaterial("log", new NameMaterialFilter("log")), Structure.Direction.UP);
                 currentLogIndex = 0;
                 mineLogFromTree(logs.get(currentLogIndex));
-                Bukkit.broadcastMessage("Mining tree...");
             }
         }));
     }
@@ -53,16 +66,17 @@ public class MineTreeActivity extends Activity {
         Bukkit.broadcastMessage("--- MINELOGFROMTREE - Mining log at: " + LocationUtils.toStringBasic(block.getLocation()));
         Bukkit.broadcastMessage("--- MINELOGFROMTREE - Pathable loc: " + LocationUtils.toStringBasic(pathableLoc));*/
         if (pathableLoc == null) {
-            Bukkit.broadcastMessage("Can't path to tree");
+            Bukkit.broadcastMessage("Can't path to tree. Waiting before retrying...");
             exclusions.add(tree);
-            tryFindTree();
+            retryTimer = retryTime;
+            findingTree = false;
             return;
         }
         GoToLocationActivity goTo = new GoToLocationActivity(pathableLoc, GoToLocationActivity.MovementType.SPRINT);
         goTo.onFinished((result) -> {
-            //Bukkit.broadcastMessage("Mining log at: " + LocationUtils.toStringBasic(block.getLocation()));
+            Bukkit.broadcastMessage("Mining log at: " + LocationUtils.toStringBasic(block.getLocation()));
             if (result.getType() == Result.Type.SUCCESS) {
-                //Bukkit.broadcastMessage("--- MINELOGFROMTREE - successfully travelled to log");
+                Bukkit.broadcastMessage("Successfully travelled to log");
                 run(new BreakBlockActivity(block).onFinished((result1) -> {
                     if (result1.getType() == Result.Type.SUCCESS) {
                         Bukkit.broadcastMessage("Mined log successfully!");
@@ -73,7 +87,6 @@ public class MineTreeActivity extends Activity {
                         } else {
                             Bukkit.broadcastMessage("Finished mining tree!");
                             markAsFinished(new Result<>(Result.Type.SUCCESS, block));
-                            tryFindTree();
                         }
                     } else {
                         Bukkit.broadcastMessage("Too far away from log");
@@ -82,16 +95,21 @@ public class MineTreeActivity extends Activity {
                 }));
             } else tryFindTree();
         });
-        //goTo.getOptions().setFaceLocation(false);
+        goTo.getOptions().setFaceLocation(true, Priority.NORMAL);
         //getNPC().getLookController().addTarget("mine_tree_log", new Target(block, Priority.HIGH));
-        goTo.getOptions().setStoppingDistance(1F);
+        goTo.getOptions().setStoppingDistance(0F);
         Bukkit.broadcastMessage("Going to target location: " + LocationUtils.toStringBasic(pathableLoc));
         run(goTo);
     }
 
     @Override
     public void onUpdate() {
-
+        if (retryTimer > 0) {
+            retryTimer--;
+        } else if (!findingTree) {
+            Bukkit.broadcastMessage("Retrying to find tree...");
+            tryFindTree();
+        }
     }
 
     @Override

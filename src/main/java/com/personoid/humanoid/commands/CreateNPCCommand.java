@@ -26,10 +26,10 @@ public class CreateNPCCommand extends CommandHandler.Command {
         npc.getProfile().setTabVisibility(true);
         PersonoidAPI.getRegistry().spawnNPC(npc, sender.getLocation());
         //npc.getNavigation().getPathfinder().getConfig().setUseChunking(false);
-        //npc.getNavigation().getOptions().setShowPath(true);
+        npc.getNavigation().getOptions().setShowPath(true);
         npc.getBrain().getActivityManager().register(
                 //new WanderActivity()
-                new MineTreeActivity()
+                new MineTreeActivity(20)
                 //new FollowEntityActivity(sender)
                 //new FightPlayerActivity(sender, FightPlayerActivity.AttackType.ALL, FightPlayerActivity.Strategy.MIXED)
                 //new DanceActivity()

@@ -1,31 +1,35 @@
-package com.personoid.humanoid.utils;
+package com.personoid.humanoid.structure;
 
+import com.personoid.humanoid.utils.Bounds;
+import com.personoid.humanoid.material.GenericMaterial;
+import org.apache.commons.lang.Validate;
 import org.bukkit.Material;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 public class Layer {
     private final List<GenericMaterial> materials;
-    private final Bounds bounds;
+    private final Bounds minBounds;
+    private final Bounds maxBounds;
 
-    public Layer(List<GenericMaterial> materials, Bounds bounds) {
+    public Layer(@NotNull List<GenericMaterial> materials, @NotNull Bounds minBounds, @NotNull Bounds maxBounds) {
+        Validate.notEmpty(materials, "Materials cannot be empty");
         this.materials = materials;
-        this.bounds = bounds;
-    }
-
-    public Layer(List<GenericMaterial> materials) {
-        this.materials = materials;
-        this.bounds = null;
+        this.minBounds = minBounds;
+        this.maxBounds = maxBounds;
     }
 
     public List<GenericMaterial> getMaterials() {
         return materials;
     }
 
-    @Nullable
-    public Bounds getBounds() {
-        return bounds;
+    public Bounds getMinBounds() {
+        return minBounds;
+    }
+
+    public Bounds getMaxBounds() {
+        return maxBounds;
     }
 
     public boolean contains(Material material) {

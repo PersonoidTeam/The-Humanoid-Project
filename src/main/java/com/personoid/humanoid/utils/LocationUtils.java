@@ -88,7 +88,7 @@ public class LocationUtils {
     public static Location getPathableLocation(Location from, Location target, int size) {
         PathFinder pathfinder = new PathFinder();
         pathfinder.getConfig().setUseChunking(false);
-        pathfinder.getConfig().setMaxNodeTests(35);
+        pathfinder.getConfig().setMaxNodeTests(25);
         List<Block> blocks = new ArrayList<>();
         for (int x = -size; x < size; x++) {
             for (int y = -size; y < size; y++) {
