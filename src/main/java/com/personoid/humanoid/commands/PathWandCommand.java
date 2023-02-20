@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class PathWandCommand extends CommandHandler.Command {
     public PathWandCommand() {
-        super("debugger", "pathwand", CommonRequirements.player);
+        super("debugger", "pathwand", CommonRequirements.PLAYER);
     }
 
     @Override

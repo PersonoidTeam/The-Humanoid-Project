@@ -7,7 +7,7 @@ import com.personoid.humanoid.utils.Config;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+import java.util.Collections;
 
 public class ProfilerMessageCommand extends CommandHandler.Command {
     public ProfilerMessageCommand() {
@@ -21,11 +21,11 @@ public class ProfilerMessageCommand extends CommandHandler.Command {
                 if (profilerType.name().equalsIgnoreCase(args[0].trim())) {
                     if (Config.getEnabledProfilers().contains(profilerType)) {
                         profilerType.disable();
-                        Config.removeEnabledProfiler(List.of(profilerType));
+                        Config.removeEnabledProfiler(Collections.singletonList(profilerType));
                         new Message("&cDisabled &6" + profilerType.name() + "&c profiling messages").send(sender);
                     } else {
                         profilerType.enable();
-                        Config.addEnabledProfiler(List.of(profilerType));
+                        Config.addEnabledProfiler(Collections.singletonList(profilerType));
                         new Message("&aEnabled &6" + profilerType.name() + "&a profiling messages").send(sender);
                     }
                     return true;

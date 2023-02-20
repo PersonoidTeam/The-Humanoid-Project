@@ -2,6 +2,9 @@ package com.personoid.humanoid.utils;
 
 import com.personoid.api.PersonoidAPI;
 import com.personoid.api.npc.NPC;
+import com.personoid.api.pathfinding.BlockPos;
+import com.personoid.api.pathfinding.Path;
+import com.personoid.api.pathfinding.PathFinder;
 import com.personoid.api.utils.math.Range;
 import com.personoid.api.utils.types.BlockTags;
 import org.bukkit.Bukkit;
@@ -10,6 +13,7 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Player;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
@@ -47,6 +51,16 @@ public class LocationUtils {
         return closestNPC;
     }
 
+    public static Player getClosestPlayer(Location location) {
+        Player closestPlayer = null;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (closestPlayer == null || player.getLocation().distance(location) < closestPlayer.getLocation().distance(location)) {
+                closestPlayer = player;
+            }
+        }
+        return closestPlayer;
+    }
+
     public static Block getBlockInDir(Location location, BlockFace direction) {
         while (true) {
             if (location.getBlock().getType().isSolid()) {
@@ -71,39 +85,45 @@ public class LocationUtils {
         return from.clone().add(0, 2, 0).distance(to) < 5;
     }
 
-    public static Location getPathableLocation(Location to, Location from){
-        Location validLocation = to.clone();
-        Location justDownwards = null;
-        for (int i = 1; i <= 10; i++){
-            if (!to.clone().subtract(0,i,0).getBlock().getType().isSolid()){
-                Location above = to.clone().subtract(0,i,0);
-                above.add(0,1,0);
-                if (!above.getBlock().getType().isSolid()){
-                    justDownwards = above.clone().subtract(0,1,0);
+    public static Location getPathableLocation(Location from, Location target, int size) {
+        PathFinder pathfinder = new PathFinder();
+        pathfinder.getConfig().setUseChunking(false);
+        pathfinder.getConfig().setMaxNodeTests(25);
+        List<Block> blocks = new ArrayList<>();
+        for (int x = -size; x < size; x++) {
+            for (int y = -size; y < size; y++) {
+                for (int z = -size; z < size; z++) {
+                    BlockPos testPos = BlockPos.fromLocation(target.clone().add(x, y, z));
+                    Path path = pathfinder.getPath(BlockPos.fromLocation(from), testPos, from.getWorld());
+                    if (path != null) {
+                        blocks.add(target.clone().add(x, y, z).getBlock());
+                    }
                 }
             }
         }
-        if (justDownwards != null){
-            return justDownwards;
-        }
-        else {
-            for (BlockFace blockFace : relativeBlockFaces){
-                Block adjacent = to.getBlock().getRelative(blockFace);
-                Location location = validDownwardsSearch(adjacent.getLocation());
-                if (location != null){
-                    if (validLocation == to){
-                        validLocation = location;
-                    }
-                    else {
-                        if (location.distance(from) < validLocation.distance(from)){
-                            validLocation = location;
+        blocks.removeIf(block -> !canStandAt(block.getLocation()));
+        blocks.sort((o1, o2) -> {
+            double distance1 = o1.getLocation().distance(target);
+            double distance2 = o2.getLocation().distance(target);
+            return Double.compare(distance1, distance2);
+        });
+        return blocks.isEmpty() ? null : blocks.get(0).getLocation();
+    }
+
+    public static Location getRandomPlaceableSpot(Location from, int size){
+        for (int x = -size; x < size; x++) {
+            for (int y = -size; y < size; y++) {
+                for (int z = -size; z < size; z++) {
+                    Location testLoc = from.clone().add(x, y, z);
+                    if (testLoc.getBlock().getType().isAir()){
+                        if (testLoc.getBlock().getRelative(BlockFace.DOWN).getType().isSolid()){
+                            return testLoc;
                         }
                     }
                 }
-
             }
         }
-        return validLocation.add(0.5,0.5,0.5);
+        return null;
     }
 
     private static Location validDownwardsSearch(Location location){
@@ -193,7 +213,9 @@ public class LocationUtils {
     }
 
     public static boolean canStandAt(Location location) {
-        return !isSolid(location) && !isSolid(location.clone().add(0, 1, 0)) && isSolid(location.clone().add(0, -1, 0));
+        return !BlockTags.SOLID.is(location) &&
+                !BlockTags.SOLID.is(location.clone().add(0, 1, 0)) &&
+                BlockTags.SOLID.is(location.clone().add(0, -1, 0));
     }
 
     public static Location fromString(String string) {

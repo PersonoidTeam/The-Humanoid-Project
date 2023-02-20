@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class RemoveNPCCommand extends CommandHandler.Command {
     public RemoveNPCCommand() {
-        super("npc", "remove", CommonRequirements.player);
+        super("npc", "remove", CommonRequirements.PLAYER);
     }
 
     @Override

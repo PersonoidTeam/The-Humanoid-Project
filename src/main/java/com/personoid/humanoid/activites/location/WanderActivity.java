@@ -3,7 +3,6 @@ package com.personoid.humanoid.activites.location;
 import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
-import com.personoid.api.ai.movement.MovementType;
 import com.personoid.api.utils.math.Range;
 import com.personoid.api.utils.types.Priority;
 import com.personoid.humanoid.utils.LocationUtils;
@@ -31,14 +30,17 @@ public class WanderActivity extends Activity {
     private void goToNewLocation() {
         Location loc = LocationUtils.validRandom(getNPC().getLocation(), range, 0.85F);
         Bukkit.broadcastMessage("Going to " + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ());
-        GoToLocationActivity.Options options = new GoToLocationActivity.Options();
-        options.setStoppingDistance(3);
-        run(new GoToLocationActivity(loc, MovementType.SPRINTING, options).onFinished(result -> goToNewLocation()));
+        GoToLocationActivity goTo = new GoToLocationActivity(loc, GoToLocationActivity.MovementType.SPRINT_JUMP);
+        goTo.onFinished(result -> goToNewLocation());
+        goTo.getOptions().setStoppingDistance(3);
+        run(goTo);
+        getNPC().getLookController().getTargets().forEach((key, target) -> Bukkit.broadcastMessage(key + ": " + target.getLocation()));
     }
 
     @Override
     public void onUpdate() {
-
+        Bukkit.broadcastMessage("On Ground: " + getNPC().isOnGround());
+        Bukkit.broadcastMessage("In Water: " + getNPC().isInWater());
     }
 
     @Override

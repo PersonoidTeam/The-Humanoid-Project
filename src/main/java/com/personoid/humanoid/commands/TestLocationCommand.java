@@ -12,7 +12,7 @@ public class TestLocationCommand extends CommandHandler.Command {
     private Location firstLoc;
 
     public TestLocationCommand() {
-        super("npc", "testloc", CommonRequirements.player);
+        super("npc", "testloc", CommonRequirements.PLAYER);
     }
 
     @Override
