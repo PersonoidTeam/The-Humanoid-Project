@@ -88,10 +88,15 @@ public class MineTreeActivity extends Activity {
                         }
                     } else {
                         Bukkit.broadcastMessage("Too far away from log");
-                        markAsFinished(new Result<>(Result.Type.FAILURE, block));
+                        exclusions.add(tree);
+                        tryFindTree();
                     }
                 }));
-            } else tryFindTree();
+            } else {
+                Bukkit.broadcastMessage("Couldn't travel to log");
+                exclusions.add(tree);
+                tryFindTree();
+            }
         });
         goTo.getOptions().setFaceLocation(true, Priority.NORMAL);
         //getNPC().getLookController().addTarget("mine_tree_log", new Target(block, Priority.HIGH));

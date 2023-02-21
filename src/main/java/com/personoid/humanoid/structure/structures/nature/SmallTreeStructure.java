@@ -29,11 +29,11 @@ public class SmallTreeStructure extends StructureRef {
     private void initialiseLayers() {
         // any log, at least 1 block wide and 4 blocks tall
         GenericMaterial logMaterial = new GenericMaterial("log", woodSetFilter, new NameMaterialFilter("log"));
-        logLayer = new Layer(Collections.singletonList(logMaterial), Bounds.of(1, 4), Bounds.of(1, 8));
+        logLayer = new Layer(Collections.singletonList(logMaterial), Bounds.of(1, 4), Bounds.of(1, 8), true);
 
         // any leaves, no minimum bounds (due to connecting trees)
         GenericMaterial leavesMaterial = new GenericMaterial("leaves", woodSetFilter, new NameMaterialFilter("leaves"));
-        leavesLayer = new Layer(Collections.singletonList(leavesMaterial), Bounds.of(2), Bounds.of(5, 8));
+        leavesLayer = new Layer(Collections.singletonList(leavesMaterial), Bounds.of(2), Bounds.of(5, 8), true);
     }
 
     @Override

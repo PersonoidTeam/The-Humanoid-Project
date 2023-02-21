@@ -12,12 +12,14 @@ public class Layer {
     private final List<GenericMaterial> materials;
     private final Bounds minBounds;
     private final Bounds maxBounds;
+    private boolean connected;
 
-    public Layer(@NotNull List<GenericMaterial> materials, @NotNull Bounds minBounds, @NotNull Bounds maxBounds) {
+    public Layer(@NotNull List<GenericMaterial> materials, @NotNull Bounds minBounds, @NotNull Bounds maxBounds, boolean connected) {
         Validate.notEmpty(materials, "Materials cannot be empty");
         this.materials = materials;
         this.minBounds = minBounds;
         this.maxBounds = maxBounds;
+        this.connected = connected;
     }
 
     public List<GenericMaterial> getMaterials() {
@@ -30,6 +32,10 @@ public class Layer {
 
     public Bounds getMaxBounds() {
         return maxBounds;
+    }
+
+    public boolean isConnected() {
+        return connected;
     }
 
     public boolean contains(Material material) {

@@ -8,9 +8,12 @@ import com.personoid.humanoid.structure.StructureRef;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class StructureLocator {
     private final StructureRef reference;
@@ -29,17 +32,14 @@ public class StructureLocator {
 
     // find the closest structure based on a range around the npc, needed blocks, and the radius of the structure
     public Structure locateStructure(Location from, List<Structure> exclusions) {
-        //Bukkit.broadcastMessage("Locating structure... (search range: " + searchRange.getMin() + " to " + searchRange.getMax() + ")");
         List<Block> structure = new ArrayList<>();
         List<GenericMaterial> neededBlocks = new ArrayList<>();
         Block chosenStructure = null;
-        // search within search range to find any block in the first layer
         for (int x = searchRange.getMin(); x <= searchRange.getMax(); x++) {
-            for (int y = searchRange.getMin(); y <= searchRange.getMax(); y++) { // can't see underground?
+            for (int y = searchRange.getMin(); y <= searchRange.getMax(); y++) {
                 for (int z = searchRange.getMin(); z <= searchRange.getMax(); z++) {
                     Location checkLoc = from.clone().add(x, y, z);
                     int validLayers = 0;
-                    breakpoint:
                     if (reference.getLayers().get(0).contains(checkLoc.getBlock().getType())) {
                         Location tempCheckLoc = checkLoc.clone();
                         for (int i = 0; i < reference.getBounds().getY(); i++) {
@@ -50,34 +50,28 @@ public class StructureLocator {
                         int highestY = 0;
                         boolean startHighestY = true;
                         List<Block> structureBlocks = new ArrayList<>();
-                        for (int i = 0; i < reference.getLayers().size(); i++) { // check all other layers
+                        for (int i = 0; i < reference.getLayers().size(); i++) {
                             Layer layer = reference.getLayers().get(i);
-                            neededBlocks.addAll(layer.getMaterials()); // reset needed blocks list
+                            neededBlocks.addAll(layer.getMaterials());
                             Location validationLoc = checkLoc.clone();
                             if (!startHighestY) validationLoc.setY(highestY + 1);
-                            //Bukkit.broadcastMessage("Checking " + LocationUtils.toStringBasic(validationLoc));
-                            List<Block> foundBlocks = validateLayer(layer, validationLoc.getBlock());
-                            structureBlocks.addAll(captureLayer(layer, validationLoc.getBlock()));
-                            // remove found blocks from needed blocks list
+                            List<Block> foundBlocks = validateLayer(layer, validationLoc);
+                            structureBlocks.addAll(foundBlocks);
                             foundBlocks.forEach(block -> neededBlocks.remove(layer.getGenericMaterial(block.getType())));
-                            // get highest y pos in found blocks
-                            for (Block block : foundBlocks) if (block.getY() > highestY) highestY = block.getY();
+                            for (Block block : foundBlocks) {
+                                if (block.getY() > highestY) {
+                                    highestY = block.getY();
+                                }
+                            }
                             startHighestY = false;
-                            //Bukkit.broadcastMessage("Highest y pos in found blocks: " + highestY);
-                            if (neededBlocks.isEmpty()) { // found all the blocks in the layer
-/*                                String postfixMsg = i == reference.getLayers().size() - 1 ?
-                                        ". All layers validated" : ", validating other layers...";
-                                Bukkit.broadcastMessage("Found all blocks in layer " + (i + 1) + postfixMsg);*/
+                            if (neededBlocks.isEmpty()) {
                                 validLayers++;
-                            } else { // didn't find all the blocks in the layer
-                                //Bukkit.broadcastMessage("Didn't find all blocks in layer " + (i + 1) + ", searching another location...");
+                            } else {
                                 neededBlocks.clear();
-                                break breakpoint;
+                                break;
                             }
                         }
                         if (validLayers < reference.getLayers().size()) break;
-                        //Bukkit.broadcastMessage("--FOUND ALL LAYERS--");
-                        // if we passed the for loop then we have found a matching structure
                         boolean inExclusions = false;
                         for (Structure exclusion : exclusions) {
                             if (exclusion.contains(structureBlocks, 0.25F)) {
@@ -86,14 +80,14 @@ public class StructureLocator {
                             }
                         }
                         if (chosenStructure != null) {
-                            switch (searchType) { // compare to the current chosen structure based on the search type
+                            switch (searchType) {
                                 case CLOSEST: {
                                     boolean closerDist = checkLoc.distance(from) < chosenStructure.getLocation().distance(from);
                                     if (closerDist && !inExclusions) {
                                         chosenStructure = checkLoc.getBlock();
                                         structure = new ArrayList<>(structureBlocks);
-                                        //Bukkit.broadcastMessage("Found a closer structure");
                                     }
+                                    break;
                                 }
                                 case FURTHEST: {
                                     boolean furtherDist = checkLoc.distance(from) > chosenStructure.getLocation().distance(from);
@@ -101,107 +95,79 @@ public class StructureLocator {
                                         chosenStructure = checkLoc.getBlock();
                                         structure = new ArrayList<>(structureBlocks);
                                     }
+                                    break;
                                 }
                             }
                         } else if (!inExclusions) {
-                            chosenStructure = checkLoc.getBlock(); // first structure found
+                            chosenStructure = checkLoc.getBlock();
                             structure = new ArrayList<>(structureBlocks);
-                            //Bukkit.broadcastMessage("Found first structure: " + structureBlocks.size());
                         }
                     }
                 }
             }
         }
-        //Bukkit.broadcastMessage("Found " + (chosenStructure == null ? "no" : "a") + " structure");
         if (structure.isEmpty()) return null;
         return new Structure(structure);
     }
 
     // look for the rest of the blocks within the layer based on the layer's minimum bounds
     /** @return the blocks found within the layer **/
-    private List<Block> validateLayer(Layer layer, Block from) {
-        List<Block> found = new ArrayList<>();
+    public List<Block> validateLayer(Layer layer, Location from) {
+        Set<Block> found = new HashSet<>();
         int searchBoundsXz = layer.getMaxBounds().getXz();
         int searchBoundsY = layer.getMaxBounds().getY();
-        // check minimum bounds
         int lowestYPosBlock = Integer.MAX_VALUE;
-        List<Block> tempList = new ArrayList<>();
+        Set<Block> tempList = new HashSet<>();
+
         for (int x = -searchBoundsXz; x < searchBoundsXz; x++) {
             for (int y = 0; y < searchBoundsY; y++) {
                 for (int z = -searchBoundsXz; z < searchBoundsXz; z++) {
-                    Location checkLoc = from.getLocation().clone().add(x, y, z);
+                    Location checkLoc = from.clone().add(x, y, z);
                     Material material = checkLoc.getBlock().getType();
-                    if (layer.contains(material)) { // found a block within the layer
-                        //Bukkit.broadcastMessage("Found block within layer: " + material.name());
-                        if (layer.getMinBounds() != null) {
-                            tempList.add(checkLoc.getBlock()); // if the minimum bounds given are greater than one block tall
-                            if (lowestYPosBlock > checkLoc.getBlockY()) lowestYPosBlock = checkLoc.getBlockY();
+                    if (layer.contains(material)) {
+                        Block block = checkLoc.getBlock();
+                        for (BlockFace face : BlockFace.values()) {
+                            Block relative = block.getRelative(face);
+                            if (layer.contains(relative.getType())) {
+                                tempList.add(block);
+                                if (block.getY() < lowestYPosBlock) {
+                                    lowestYPosBlock = block.getY();
+                                }
+                                break;
+                            }
                         }
-                        else found.add(checkLoc.getBlock());
                     }
                 }
             }
         }
+
         if (!tempList.isEmpty()) {
             int minBoundsXz = layer.getMinBounds().getXz();
             int minBoundsY = layer.getMinBounds().getY();
-            // epic super way to get minimum percentage of blocks needed:
-            // width squared / (width + Math.ceil(width / 2) squared) * 100
-            double totalSqrt = minBoundsXz + Math.ceil(minBoundsXz / 2F);
-            double minPercent = (minBoundsXz * minBoundsXz) / (totalSqrt * totalSqrt) * 100;
-            List<Block> tempWidthList = new ArrayList<>();
+            double total = Math.pow(minBoundsXz + Math.ceil(minBoundsXz / 2F), 2);
+            double minPercent = Math.pow(minBoundsXz, 2) / total * 100;
+            Set<Block> tempWidthList = new HashSet<>();
             int foundYBlocks = 0;
             int nextY = lowestYPosBlock;
+            Set<Location> tempXzSet = new HashSet<>();
             for (Block block : tempList) {
                 if (block.getY() == nextY) {
                     foundYBlocks++;
                     nextY++;
                 }
-                // add only different Xz blocks to list to avoid percentage y bias
-                boolean foundSameXz = false;
-                for (Block block1 : tempWidthList) {
-                    if (block.getX() == block1.getX() && block.getZ() == block1.getZ()) {
-                        foundSameXz = true;
-                        break;
-                    }
+                Location checkLoc = block.getLocation();
+                if (!tempXzSet.contains(checkLoc)) {
+                    tempXzSet.add(checkLoc);
+                    tempWidthList.add(block);
                 }
-                if (!foundSameXz) tempWidthList.add(block);
             }
-            //Bukkit.broadcastMessage("Total y blocks found: " + foundYBlocks);
-            double percent = tempWidthList.size() / (totalSqrt * totalSqrt) * 100;
-            //Bukkit.broadcastMessage("Min percent: " + minPercent + ", found percent: " + percent);
+            double percent = (tempWidthList.size() / total) * 100;
             if (percent >= minPercent && foundYBlocks >= minBoundsY) {
-                //Bukkit.broadcastMessage("Valid blocks found in layer, adding to list...");
                 found.addAll(tempWidthList);
             }
         }
-        //Bukkit.broadcastMessage("Found total of " + found.size() + " blocks within layer");
-        return found;
-    }
 
-    /** @return the blocks found within the layer **/
-    private List<Block> captureLayer(Layer layer, Block from) {
-        List<Block> found = new ArrayList<>();
-        int searchBoundsXz = layer.getMaxBounds().getXz();
-        int searchBoundsY = layer.getMaxBounds().getY();
-        int lowestYPosBlock = Integer.MAX_VALUE;
-        for (int x = -searchBoundsXz; x < searchBoundsXz; x++) {
-            for (int y = 0; y < searchBoundsY; y++) {
-                for (int z = -searchBoundsXz; z < searchBoundsXz; z++) {
-                    Location checkLoc = from.getLocation().clone().add(x, y, z);
-                    Material material = checkLoc.getBlock().getType();
-                    if (layer.contains(material)) { // found a block within the layer
-                        //Bukkit.broadcastMessage("Found block within layer: " + material.name());
-                        if (layer.getMinBounds() != null) {
-                            found.add(checkLoc.getBlock()); // if the minimum bounds given are greater than one block tall
-                            if (lowestYPosBlock > checkLoc.getBlockY()) lowestYPosBlock = checkLoc.getBlockY();
-                        }
-                        else found.add(checkLoc.getBlock());
-                    }
-                }
-            }
-        }
-        return found;
+        return new ArrayList<>(found);
     }
 
     public Range getSearchRange() {
