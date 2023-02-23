@@ -1,8 +1,9 @@
 package com.personoid.humanoid.listeners;
 
-import com.personoid.api.pathfinding.BlockPos;
 import com.personoid.api.pathfinding.Path;
 import com.personoid.api.pathfinding.PathFinder;
+import com.personoid.api.pathfinding.goal.XZGoal;
+import com.personoid.api.pathfinding.utils.BlockPos;
 import com.personoid.api.utils.bukkit.Message;
 import com.personoid.api.utils.bukkit.Task;
 import com.personoid.humanoid.Humanoid;
@@ -60,8 +61,8 @@ public class DebugEvents implements Listener {
                 int id = data.get(pathwandKey, PersistentDataType.INTEGER);
                 if (paths.containsKey(id)) {
                     Path path = paths.get(id);
-                    if (path.getNode(0).getBlockPos().toLocation(loc1.getWorld()).equals(loc1) &&
-                            path.getNode(path.size() - 1).getBlockPos().toLocation(loc2.getWorld()).equals(loc2)) {
+                    if (path.getNode(0).getPos().toLocation(loc1.getWorld()).equals(loc1) &&
+                            path.getNode(path.size() - 1).getPos().toLocation(loc2.getWorld()).equals(loc2)) {
                         new Message("&b[PathWand] &cPath is already in memory!").send(event.getPlayer());
                         return;
                     }
@@ -69,9 +70,8 @@ public class DebugEvents implements Listener {
                 paths.remove(id);
                 new Message("&b[PathWand] &6Generating path...").send(event.getPlayer());
                 PathFinder pathfinder = new PathFinder();
-                pathfinder.getConfig().setUseChunking(false);
-                pathfinder.getConfig().setMaxNodeTests(10000);
-                Path path = pathfinder.getPath(BlockPos.fromLocation(loc1).above(), BlockPos.fromLocation(loc2).above(), loc1.getWorld());
+                BlockPos loc2AbovePos = BlockPos.fromLocation(loc2).above();
+                Path path = pathfinder.findPath(BlockPos.fromLocation(loc1).above(), new XZGoal(loc2AbovePos.getX(), loc2AbovePos.getZ()), loc1.getWorld());
                 if (path == null) {
                     new Message("&b[PathWand] &cPath not found!").send(event.getPlayer());
                     return;
@@ -90,7 +90,7 @@ public class DebugEvents implements Listener {
                                         if (entry.getValue().size() > 0) {
                                             for (int i = 0; i < entry.getValue().size(); i++) {
                                                 player.getWorld().spawnParticle(Particle.DUST_COLOR_TRANSITION, entry.getValue().getNode(i)
-                                                        .getBlockPos().toLocation(player.getWorld()).clone().add(0.5, 0, 0.5), 5,
+                                                        .getPos().toLocation(player.getWorld()).clone().add(0.5, 0, 0.5), 5,
                                                         new Particle.DustTransition(Color.RED, Color.ORANGE, 1));
                                             }
                                         }

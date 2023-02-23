@@ -10,10 +10,16 @@ import com.personoid.api.utils.types.Priority;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
+import org.bukkit.util.Vector;
 
 public class FollowEntityActivity extends Activity {
+    private static final int CHECK_RATE = 5;
+    private static final int CHECK_DISTANCE = 1;
+
     private final Entity entity;
     private final double stoppingDistance;
+
+    private Location lastCheckLoc;
 
     public FollowEntityActivity(Entity entity) {
         super(ActivityType.FOLLOWING, Priority.LOW, new BoredomSettings(MathUtils.random(600, 2400), MathUtils.random(2400, 12000)));
@@ -34,13 +40,20 @@ public class FollowEntityActivity extends Activity {
 
     @Override
     public void onUpdate() {
-        if (getCurrentDuration() % 5 == 0) {
-            Location startLoc = LocationUtils.getBlockInDir(getNPC().getLocation().clone(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
-            Location endLoc = LocationUtils.getBlockInDir(entity.getLocation().clone(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
-            GoToLocationActivity goTo = new GoToLocationActivity(endLoc, GoToLocationActivity.MovementType.SPRINT_JUMP);
-            goTo.getOptions().setStoppingDistance(stoppingDistance);
-            goTo.getOptions().setFaceLocation(false, Priority.NORMAL);
-            run(goTo);
+        if (getCurrentDuration() % CHECK_RATE == 0) {
+            boolean deltaDistanceCheck = lastCheckLoc == null || lastCheckLoc.distance(entity.getLocation()) > CHECK_DISTANCE;
+            boolean stoppingDistanceCheck = getNPC().getLocation().distance(entity.getLocation()) > this.stoppingDistance;
+            Vector vel = getNPC().getMoveController().getVelocity();
+            boolean movingCheck = Math.abs(vel.getX()) > 0.2 || Math.abs(vel.getY()) > 0.2 || Math.abs(vel.getZ()) > 0.2;
+            if (deltaDistanceCheck || (stoppingDistanceCheck && movingCheck)) {
+                Location endLoc = LocationUtils.getBlockInDir(entity.getLocation().clone(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
+                GoToLocationActivity goTo = new GoToLocationActivity(endLoc, GoToLocationActivity.MovementType.SPRINT_JUMP);
+                goTo.getOptions().setStoppingDistance(stoppingDistance);
+                goTo.getOptions().setFaceLocation(false, Priority.NORMAL);
+                lastCheckLoc = entity.getLocation();
+                run(goTo);
+            }
+            //Location startLoc = LocationUtils.getBlockInDir(getNPC().getLocation().clone(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
 /*            PathFinder pathfinder = getNPC().getNavigation().getPathfinder();
             Path currentPath = getNPC().getNavigation().getCurrentPath();
             Path newPath = pathfinder.getPath(BlockPos.fromLocation(startLoc), BlockPos.fromLocation(endLoc), entity.getWorld());

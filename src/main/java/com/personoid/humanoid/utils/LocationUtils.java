@@ -2,9 +2,10 @@ package com.personoid.humanoid.utils;
 
 import com.personoid.api.PersonoidAPI;
 import com.personoid.api.npc.NPC;
-import com.personoid.api.pathfinding.BlockPos;
 import com.personoid.api.pathfinding.Path;
 import com.personoid.api.pathfinding.PathFinder;
+import com.personoid.api.pathfinding.goal.XZGoal;
+import com.personoid.api.pathfinding.utils.BlockPos;
 import com.personoid.api.utils.math.Range;
 import com.personoid.api.utils.types.BlockTags;
 import org.bukkit.Bukkit;
@@ -87,14 +88,12 @@ public class LocationUtils {
 
     public static Location getPathableLocation(Location from, Location target, int size) {
         PathFinder pathfinder = new PathFinder();
-        pathfinder.getConfig().setUseChunking(false);
-        pathfinder.getConfig().setMaxNodeTests(35);
         List<Block> blocks = new ArrayList<>();
         for (int x = -size; x < size; x++) {
             for (int y = -size; y < size; y++) {
                 for (int z = -size; z < size; z++) {
                     BlockPos testPos = BlockPos.fromLocation(target.clone().add(x, y, z));
-                    Path path = pathfinder.getPath(BlockPos.fromLocation(from), testPos, from.getWorld());
+                    Path path = pathfinder.findPath(BlockPos.fromLocation(from), new XZGoal(testPos.getX(), testPos.getZ()), from.getWorld());
                     if (path != null) {
                         blocks.add(target.clone().add(x, y, z).getBlock());
                     }
