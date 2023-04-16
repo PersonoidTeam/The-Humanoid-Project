@@ -16,3 +16,6 @@ commands:
   debugger:
     description: Accesses the debugger commands
     default: op
+  path:
+    description: Accesses the path commands
+    default: op

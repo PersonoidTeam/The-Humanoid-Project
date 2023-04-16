@@ -3,8 +3,9 @@ package com.personoid.humanoid.utils;
 import com.personoid.api.PersonoidAPI;
 import com.personoid.api.npc.NPC;
 import com.personoid.api.pathfinding.Path;
-import com.personoid.api.pathfinding.PathFinder;
 import com.personoid.api.pathfinding.goal.XZGoal;
+import com.personoid.api.pathfinding.pathfinder.PathFinder;
+import com.personoid.api.pathfinding.pathfinder.ShortRangePathFinder;
 import com.personoid.api.pathfinding.utils.BlockPos;
 import com.personoid.api.utils.math.Range;
 import com.personoid.api.utils.types.BlockTags;
@@ -87,7 +88,7 @@ public class LocationUtils {
     }
 
     public static Location getPathableLocation(Location from, Location target, int size) {
-        PathFinder pathfinder = new PathFinder();
+        PathFinder pathfinder = new ShortRangePathFinder();
         List<Block> blocks = new ArrayList<>();
         for (int x = -size; x < size; x++) {
             for (int y = -size; y < size; y++) {

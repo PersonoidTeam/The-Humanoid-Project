@@ -4,6 +4,7 @@ import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.ai.looking.Target;
+import com.personoid.api.npc.NPCInventory;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.types.HandEnum;
 import com.personoid.api.utils.types.Priority;
@@ -112,9 +113,12 @@ public class FightPlayerActivity extends Activity {
             if (highHealth) {
                 return false;
             } else {
+                if (!shouldContinueAttacking()) return true;
                 return tooClose || retreatEndTimer < retreatEndCooldown;
             }
-        } else return lowHealth;
+        } else {
+            return !shouldContinueAttacking() || lowHealth;
+        }
     }
 
     private int offset = MathUtils.random(-10, 0);
@@ -180,6 +184,7 @@ public class FightPlayerActivity extends Activity {
 
     @Override
     public boolean canStart(StartType startType) {
+        equipBestArmor();
         return shouldAttack() && !checkWinStatus();
     }
 
@@ -188,8 +193,36 @@ public class FightPlayerActivity extends Activity {
         return true;
     }
 
-    // TODO: should attack entity based on their gear?
+    private boolean shouldContinueAttacking() {
+        if (player == null || player.isDead()) return false;
+        if (getNPC().getEntity().getWorld() != player.getWorld()) return false;
+        double npcDefence = getNPC().getEntity().getHealth() * FightingUtils.getTotalDefence(getNPC().getEntity());
+        double playerDefence = player.getHealth() * FightingUtils.getTotalDefence(player);
+/*        Bukkit.broadcastMessage("npcDefence: " + MathUtils.round(npcDefence, 2));
+        Bukkit.broadcastMessage("playerDefence: " + MathUtils.round(playerDefence, 2));
+        Bukkit.broadcastMessage("Difference: " + MathUtils.round(playerDefence - npcDefence, 2));*/
+        return !(npcDefence < playerDefence - 12F); // CONFIDENCE MARGIN
+    }
+
     private boolean shouldAttack() {
-        return true;
+        if (!shouldContinueAttacking()) return false;
+        return !(getNPC().getEntity().getLocation().distance(player.getLocation()) > 32);
+    }
+
+    // TODO: find best armor combination
+    private void equipBestArmor() {
+        NPCInventory inv = getNPC().getInventory();
+        for (ItemStack armor : inv.getInventoryContents()) {
+            if (armor == null) continue;
+            if (armor.getType().name().contains("HELMET")) {
+                inv.setHelmet(armor);
+            } else if (armor.getType().name().contains("CHESTPLATE")) {
+                inv.setChestplate(armor);
+            } else if (armor.getType().name().contains("LEGGINGS")) {
+                inv.setLeggings(armor);
+            } else if (armor.getType().name().contains("BOOTS")) {
+                inv.setBoots(armor);
+            }
+        }
     }
 }

@@ -1,5 +1,7 @@
 package com.personoid.humanoid.values;
 
+import org.bukkit.inventory.ItemStack;
+
 public enum ArmorItemValues {
     TURTLE_SHELL(2),
 
@@ -32,15 +34,31 @@ public enum ArmorItemValues {
     NETHERITE_CHESTPLATE(8),
     NETHERITE_LEGGINGS(6),
     NETHERITE_BOOTS(3),
+
+    AIR(0)
     ;
 
-    final double healthMultiplier;
+    final double armorPoints;
 
     ArmorItemValues(int armorPoints){
-        healthMultiplier = (((armorPoints * 0.1875)/20)*10)+1;
+        this.armorPoints = armorPoints;
     }
 
     public double getHealthMultiplier() {
-        return healthMultiplier;
+        return (((armorPoints * 0.1875)/20)*10)+1;
+    }
+
+    public double getArmorPoints() {
+        return armorPoints;
+    }
+
+    public static ArmorItemValues from(ItemStack item) {
+        if (item == null) return AIR;
+        for (ArmorItemValues values : values()) {
+            if (values.name().equalsIgnoreCase(item.getType().name())) {
+                return values;
+            }
+        }
+        return AIR;
     }
 }

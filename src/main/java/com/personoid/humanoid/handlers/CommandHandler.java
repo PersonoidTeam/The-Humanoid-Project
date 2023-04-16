@@ -22,6 +22,7 @@ public class CommandHandler implements CommandExecutor {
         Humanoid.getPlugin().getCommand("npc").setExecutor(instance);
         Humanoid.getPlugin().getCommand("profiler").setExecutor(instance);
         Humanoid.getPlugin().getCommand("debugger").setExecutor(instance);
+        Humanoid.getPlugin().getCommand("path").setExecutor(instance);
 
         registerCommand(new CreateNPCCommand());
         registerCommand(new RemoveNPCCommand());
@@ -29,6 +30,7 @@ public class CommandHandler implements CommandExecutor {
         registerCommand(new TestLocationCommand());
         registerCommand(new ProfilerMessageCommand());
         registerCommand(new PathWandCommand());
+        registerCommand(new PathRunCommand());
     }
 
     public static boolean registerCommand(Command command) {

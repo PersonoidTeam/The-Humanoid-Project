@@ -1,8 +1,9 @@
 package com.personoid.humanoid.listeners;
 
 import com.personoid.api.pathfinding.Path;
-import com.personoid.api.pathfinding.PathFinder;
-import com.personoid.api.pathfinding.goal.XZGoal;
+import com.personoid.api.pathfinding.goal.BlockGoal;
+import com.personoid.api.pathfinding.pathfinder.LongRangePathFinder;
+import com.personoid.api.pathfinding.pathfinder.PathFinder;
 import com.personoid.api.pathfinding.utils.BlockPos;
 import com.personoid.api.utils.bukkit.Message;
 import com.personoid.api.utils.bukkit.Task;
@@ -22,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DebugEvents implements Listener {
-    private static final HashMap<Integer, Path> paths = new HashMap<>();
+    public static final HashMap<Integer, Path> paths = new HashMap<>();
     private static Task pathTask;
 
     @EventHandler
@@ -61,7 +62,7 @@ public class DebugEvents implements Listener {
                 int id = data.get(pathwandKey, PersistentDataType.INTEGER);
                 if (paths.containsKey(id)) {
                     Path path = paths.get(id);
-                    if (path.getNode(0).getPos().toLocation(loc1.getWorld()).equals(loc1) &&
+                    if (path.size() > 0 && path.getNode(0).getPos().toLocation(loc1.getWorld()).equals(loc1) &&
                             path.getNode(path.size() - 1).getPos().toLocation(loc2.getWorld()).equals(loc2)) {
                         new Message("&b[PathWand] &cPath is already in memory!").send(event.getPlayer());
                         return;
@@ -69,9 +70,9 @@ public class DebugEvents implements Listener {
                 }
                 paths.remove(id);
                 new Message("&b[PathWand] &6Generating path...").send(event.getPlayer());
-                PathFinder pathfinder = new PathFinder();
+                PathFinder pathfinder = new LongRangePathFinder();
                 BlockPos loc2AbovePos = BlockPos.fromLocation(loc2).above();
-                Path path = pathfinder.findPath(BlockPos.fromLocation(loc1).above(), new XZGoal(loc2AbovePos.getX(), loc2AbovePos.getZ()), loc1.getWorld());
+                Path path = pathfinder.findPath(BlockPos.fromLocation(loc1).above(), new BlockGoal(loc2AbovePos), loc2.getWorld());
                 if (path == null) {
                     new Message("&b[PathWand] &cPath not found!").send(event.getPlayer());
                     return;

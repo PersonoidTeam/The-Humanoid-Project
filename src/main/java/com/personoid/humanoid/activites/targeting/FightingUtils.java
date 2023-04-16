@@ -2,11 +2,13 @@ package com.personoid.humanoid.activites.targeting;
 
 import com.google.common.collect.Multimap;
 import com.personoid.api.utils.Parameter;
+import com.personoid.humanoid.values.ArmorItemValues;
 import com.personoid.nms.packet.Packages;
 import com.personoid.nms.packet.ReflectionUtils;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Sound;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -88,5 +90,27 @@ public class FightingUtils {
     public static boolean inSurvival(Player player) {
         GameMode gameMode = player.getGameMode();
         return gameMode == GameMode.SURVIVAL || gameMode == GameMode.ADVENTURE;
+    }
+
+    public static float getTotalDefence(Player player) {
+        // TODO: improve calculations
+        float defence = 0;
+        defence += ArmorItemValues.from(player.getInventory().getHelmet()).getHealthMultiplier();
+        defence += ArmorItemValues.from(player.getInventory().getChestplate()).getHealthMultiplier();
+        defence += ArmorItemValues.from(player.getInventory().getLeggings()).getHealthMultiplier();
+        defence += ArmorItemValues.from(player.getInventory().getBoots()).getHealthMultiplier();
+/*        for (ItemStack armour : player.getInventory().getArmorContents()) {
+            if (armour != null) {
+                defence += armour.getEnchantmentLevel(Enchantment.PROTECTION_ENVIRONMENTAL);
+            }
+        }*/
+        return defence;
+    }
+
+    public static float getTotalAttack(Player player) {
+        float attack = 0;
+        ItemStack item = player.getInventory().getItemInMainHand();
+        attack += item.getEnchantmentLevel(Enchantment.DAMAGE_ALL);
+        return attack;
     }
 }

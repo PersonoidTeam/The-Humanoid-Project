@@ -4,13 +4,10 @@ import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.ai.looking.Target;
-import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.types.Priority;
 import org.bukkit.Location;
-import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
-import org.bukkit.util.Vector;
 
 public class FollowEntityActivity extends Activity {
     private static final int CHECK_RATE = 5;
@@ -41,7 +38,13 @@ public class FollowEntityActivity extends Activity {
     @Override
     public void onUpdate() {
         if (getCurrentDuration() % CHECK_RATE == 0) {
-            boolean deltaDistanceCheck = lastCheckLoc == null || lastCheckLoc.distance(entity.getLocation()) > CHECK_DISTANCE;
+            //Location endLoc = LocationUtils.getBlockInDir(entity.getLocation().clone(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
+            GoToLocationActivity goTo = new GoToLocationActivity(entity.getLocation(), GoToLocationActivity.MovementType.SPRINT_JUMP);
+            goTo.getOptions().setStoppingDistance(stoppingDistance);
+            goTo.getOptions().setFaceLocation(false, Priority.NORMAL);
+            lastCheckLoc = entity.getLocation();
+            run(goTo);
+/*            boolean deltaDistanceCheck = lastCheckLoc == null || lastCheckLoc.distance(entity.getLocation()) > CHECK_DISTANCE;
             boolean stoppingDistanceCheck = getNPC().getLocation().distance(entity.getLocation()) > this.stoppingDistance;
             Vector vel = getNPC().getMoveController().getVelocity();
             boolean movingCheck = Math.abs(vel.getX()) > 0.2 || Math.abs(vel.getY()) > 0.2 || Math.abs(vel.getZ()) > 0.2;
@@ -52,7 +55,7 @@ public class FollowEntityActivity extends Activity {
                 goTo.getOptions().setFaceLocation(false, Priority.NORMAL);
                 lastCheckLoc = entity.getLocation();
                 run(goTo);
-            }
+            }*/
             //Location startLoc = LocationUtils.getBlockInDir(getNPC().getLocation().clone(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
 /*            PathFinder pathfinder = getNPC().getNavigation().getPathfinder();
             Path currentPath = getNPC().getNavigation().getCurrentPath();
