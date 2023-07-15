@@ -1,16 +1,12 @@
 package com.personoid.humanoid.activites.interaction;
 
 import com.personoid.api.ai.activity.Activity;
-import com.personoid.api.ai.activity.ActivityType;
+import com.personoid.api.utils.types.Priority;
 import com.personoid.humanoid.utils.LocationUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
 
 public class CraftItemActivity extends Activity {
-    public CraftItemActivity() {
-        super(ActivityType.INTERACTION);
-    }
-
     Location currentCraftingTable = null;
 
     // Recurse through materials in a crafting recipe for a given item.
@@ -26,7 +22,7 @@ public class CraftItemActivity extends Activity {
         Location placeLoc = LocationUtils.getRandomPlaceableSpot(getNPC().getLocation(), 3);
         if (placeLoc != null){
             currentCraftingTable = placeLoc.clone();
-            getNPC().placeBlock(placeLoc, Material.CRAFTING_TABLE);
+            getNPC().getBlocker().place(placeLoc.getBlock(), Material.CRAFTING_TABLE);
         }
     }
 
@@ -48,5 +44,15 @@ public class CraftItemActivity extends Activity {
     @Override
     public boolean canStop(StopType stopType) {
         return true;
+    }
+
+    @Override
+    public Priority getPriority() {
+        return Priority.NORMAL;
+    }
+
+    @Override
+    public BoredomSettings getBoredomSettings() {
+        return null;
     }
 }

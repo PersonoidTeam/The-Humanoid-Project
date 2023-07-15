@@ -2,8 +2,7 @@ package com.personoid.humanoid.activites.targeting;
 
 import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
-import com.personoid.api.ai.activity.ActivityType;
-import com.personoid.api.ai.looking.Target;
+import com.personoid.api.ai.looking.target.EntityTarget;
 import com.personoid.api.npc.NPCInventory;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.types.HandEnum;
@@ -26,7 +25,6 @@ public class FightPlayerActivity extends Activity {
     private double highestDamageTaken;
 
     public FightPlayerActivity(Player player, AttackType attackType, Strategy strategy) {
-        super(ActivityType.FIGHTING, Priority.HIGHEST);
         this.player = player;
         this.attackType = attackType;
         this.strategy = strategy;
@@ -34,7 +32,7 @@ public class FightPlayerActivity extends Activity {
 
     @Override
     public void onStart(StartType startType) {
-        getNPC().getLookController().addTarget("fight_target", new Target(player, Priority.HIGH));
+        getNPC().getLookController().addTarget("fight_target", new EntityTarget(player));
         getNPC().getInventory().addItem(new ItemStack(Material.STONE_AXE));
         getNPC().getInventory().setOffhand(new ItemStack(Material.SHIELD));
         switchToItem(getBestWeapon());
@@ -147,7 +145,7 @@ public class FightPlayerActivity extends Activity {
         run(goTo);
 
         int attackSpeed = FightingUtils.getAttackSpeed(getNPC().getInventory().getSelectedItem());
-        boolean hasLineofSight = getNPC().getBrain().getOpticsManager().hasLineOfSight(player);
+        boolean hasLineofSight = getNPC().getBrain().getOptics().hasLineOfSight(player);
         if (distance < 4 && hasLineofSight) {
             if (attackCooldown <= offset) {
                 if (!retreating && distance < 3.25) {
@@ -191,6 +189,16 @@ public class FightPlayerActivity extends Activity {
     @Override
     public boolean canStop(StopType stopType) {
         return true;
+    }
+
+    @Override
+    public Priority getPriority() {
+        return Priority.HIGHEST;
+    }
+
+    @Override
+    public BoredomSettings getBoredomSettings() {
+        return null;
     }
 
     private boolean shouldContinueAttacking() {

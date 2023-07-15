@@ -2,8 +2,7 @@ package com.personoid.humanoid.activites.location;
 
 import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
-import com.personoid.api.ai.activity.ActivityType;
-import com.personoid.api.ai.looking.Target;
+import com.personoid.api.ai.looking.target.EntityTarget;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.types.Priority;
 import org.bukkit.Location;
@@ -19,20 +18,18 @@ public class FollowEntityActivity extends Activity {
     private Location lastCheckLoc;
 
     public FollowEntityActivity(Entity entity) {
-        super(ActivityType.FOLLOWING, Priority.LOW, new BoredomSettings(MathUtils.random(600, 2400), MathUtils.random(2400, 12000)));
         this.entity = entity;
         this.stoppingDistance = 2;
     }
 
     public FollowEntityActivity(Entity entity, double stoppingDistance) {
-        super(ActivityType.FOLLOWING, Priority.LOW, new BoredomSettings(MathUtils.random(600, 2400), MathUtils.random(2400, 12000)));
         this.entity = entity;
         this.stoppingDistance = stoppingDistance;
     }
 
     @Override
     public void onStart(StartType startType) {
-        getNPC().getLookController().addTarget("follow_target", new Target(entity, Priority.HIGH));
+        getNPC().getLookController().addTarget("follow_target", new EntityTarget(entity));
     }
 
     @Override
@@ -103,5 +100,15 @@ public class FollowEntityActivity extends Activity {
     @Override
     public boolean canStop(StopType stopType) {
         return true;
+    }
+
+    @Override
+    public Priority getPriority() {
+        return Priority.LOW;
+    }
+
+    @Override
+    public BoredomSettings getBoredomSettings() {
+        return new BoredomSettings(MathUtils.random(600, 2400), MathUtils.random(2400, 12000));
     }
 }

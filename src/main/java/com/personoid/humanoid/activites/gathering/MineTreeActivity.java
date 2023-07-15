@@ -3,7 +3,6 @@ package com.personoid.humanoid.activites.gathering;
 import com.personoid.api.activities.BreakBlockActivity;
 import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
-import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.math.Range;
@@ -34,7 +33,6 @@ public class MineTreeActivity extends Activity {
     private boolean findingTree;
 
     public MineTreeActivity(StructureRef type, int retryTime) {
-        super(ActivityType.GATHERING, new BoredomSettings(MathUtils.random(1200, 6000), MathUtils.random(3600, 12000)));
         locator = new StructureLocator(type, StructureLocator.SearchType.CLOSEST, new Range(-20, 20));
         this.retryTime = retryTime;
     }
@@ -128,5 +126,15 @@ public class MineTreeActivity extends Activity {
     @Override
     public boolean canStop(StopType stopType) {
         return true;
+    }
+
+    @Override
+    public Priority getPriority() {
+        return Priority.NORMAL;
+    }
+
+    @Override
+    public BoredomSettings getBoredomSettings() {
+        return new BoredomSettings(MathUtils.random(1200, 6000), MathUtils.random(3600, 12000));
     }
 }

@@ -1,8 +1,7 @@
 package com.personoid.humanoid.activites.misc;
 
 import com.personoid.api.ai.activity.Activity;
-import com.personoid.api.ai.activity.ActivityType;
-import com.personoid.api.ai.looking.Target;
+import com.personoid.api.ai.looking.target.LocationTarget;
 import com.personoid.api.npc.Pose;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.types.HandEnum;
@@ -14,10 +13,6 @@ public class DanceActivity extends Activity {
     private int nextToggleCrouchTick;
     private int nextPunchTick;
     private int nextLookTick;
-
-    public DanceActivity() {
-        super(ActivityType.IDLING, Priority.LOWEST, new BoredomSettings(MathUtils.random(200, 1200), MathUtils.random(2400, 12000)));
-    }
 
     @Override
     public void onStart(StartType startType) {
@@ -38,7 +33,7 @@ public class DanceActivity extends Activity {
             nextLookTick = MathUtils.random(5, 15);
             Vector randomVec = new Vector(MathUtils.random(-5, 5), MathUtils.random(-5, 5), MathUtils.random(-5, 5));
             Location facing = getNPC().getLocation().clone().add(randomVec);
-            getNPC().getLookController().addTarget("dance_activity", new Target(facing, Priority.NORMAL));
+            getNPC().getLookController().addTarget("dance_activity", new LocationTarget(facing));
         }
         nextToggleCrouchTick--;
         nextPunchTick--;
@@ -59,5 +54,15 @@ public class DanceActivity extends Activity {
     @Override
     public boolean canStop(StopType stopType) {
         return true;
+    }
+
+    @Override
+    public Priority getPriority() {
+        return Priority.LOWEST;
+    }
+
+    @Override
+    public BoredomSettings getBoredomSettings() {
+        return new BoredomSettings(MathUtils.random(200, 1200), MathUtils.random(2400, 12000));
     }
 }

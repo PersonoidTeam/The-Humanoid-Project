@@ -2,7 +2,6 @@ package com.personoid.humanoid.activites.location;
 
 import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
-import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.utils.math.Range;
 import com.personoid.api.utils.types.Priority;
 import com.personoid.humanoid.utils.LocationUtils;
@@ -13,12 +12,10 @@ public class WanderActivity extends Activity {
     private final Range range;
 
     public WanderActivity() {
-        super(ActivityType.WANDERING, Priority.LOWEST);
         range = new Range(10, 25);
     }
 
     public WanderActivity(Range range) {
-        super(ActivityType.WANDERING, Priority.LOWEST);
         this.range = range;
     }
 
@@ -34,7 +31,7 @@ public class WanderActivity extends Activity {
         goTo.onFinished(result -> goToNewLocation());
         goTo.getOptions().setStoppingDistance(3);
         run(goTo);
-        getNPC().getLookController().getTargets().forEach((key, target) -> Bukkit.broadcastMessage(key + ": " + target.getLocation()));
+        //getNPC().getLookController().getTargets().forEach((key, target) -> Bukkit.broadcastMessage(key + ": " + target.getLocation()));
     }
 
     @Override
@@ -56,5 +53,15 @@ public class WanderActivity extends Activity {
     @Override
     public boolean canStop(StopType stopType) {
         return true;
+    }
+
+    @Override
+    public Priority getPriority() {
+        return Priority.LOWEST;
+    }
+
+    @Override
+    public BoredomSettings getBoredomSettings() {
+        return null;
     }
 }

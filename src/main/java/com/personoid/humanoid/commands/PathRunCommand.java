@@ -3,7 +3,7 @@ package com.personoid.humanoid.commands;
 import com.personoid.api.PersonoidAPI;
 import com.personoid.api.activities.FollowPathActivity;
 import com.personoid.api.npc.NPC;
-import com.personoid.api.pathfinding.Path;
+import com.personoid.api.pathfinding.calc.Path;
 import com.personoid.humanoid.Humanoid;
 import com.personoid.humanoid.handlers.CommandHandler;
 import com.personoid.humanoid.listeners.DebugEvents;

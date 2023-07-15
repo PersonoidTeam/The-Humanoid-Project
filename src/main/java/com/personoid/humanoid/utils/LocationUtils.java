@@ -2,11 +2,11 @@ package com.personoid.humanoid.utils;
 
 import com.personoid.api.PersonoidAPI;
 import com.personoid.api.npc.NPC;
-import com.personoid.api.pathfinding.Path;
-import com.personoid.api.pathfinding.goal.XZGoal;
-import com.personoid.api.pathfinding.pathfinder.PathFinder;
-import com.personoid.api.pathfinding.pathfinder.ShortRangePathFinder;
-import com.personoid.api.pathfinding.utils.BlockPos;
+import com.personoid.api.pathfinding.calc.Path;
+import com.personoid.api.pathfinding.calc.goal.XZGoal;
+import com.personoid.api.pathfinding.calc.pathfinder.PathFinder;
+import com.personoid.api.pathfinding.calc.pathfinder.ShortRangePathFinder;
+import com.personoid.api.pathfinding.calc.utils.BlockPos;
 import com.personoid.api.utils.math.Range;
 import com.personoid.api.utils.types.BlockTags;
 import org.bukkit.Bukkit;

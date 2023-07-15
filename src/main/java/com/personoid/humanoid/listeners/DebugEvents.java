@@ -1,10 +1,10 @@
 package com.personoid.humanoid.listeners;
 
-import com.personoid.api.pathfinding.Path;
-import com.personoid.api.pathfinding.goal.BlockGoal;
-import com.personoid.api.pathfinding.pathfinder.LongRangePathFinder;
-import com.personoid.api.pathfinding.pathfinder.PathFinder;
-import com.personoid.api.pathfinding.utils.BlockPos;
+import com.personoid.api.pathfinding.calc.Path;
+import com.personoid.api.pathfinding.calc.goal.BlockGoal;
+import com.personoid.api.pathfinding.calc.pathfinder.LongRangePathFinder;
+import com.personoid.api.pathfinding.calc.pathfinder.PathFinder;
+import com.personoid.api.pathfinding.calc.utils.BlockPos;
 import com.personoid.api.utils.bukkit.Message;
 import com.personoid.api.utils.bukkit.Task;
 import com.personoid.humanoid.Humanoid;

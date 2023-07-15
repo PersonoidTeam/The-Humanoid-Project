@@ -2,12 +2,12 @@ package com.personoid.humanoid.activites.location;
 
 import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
-import com.personoid.api.ai.activity.ActivityType;
 import com.personoid.api.utils.Result;
 import com.personoid.api.utils.math.MathUtils;
+import com.personoid.api.utils.types.Priority;
 import com.personoid.humanoid.structure.Structure;
 import com.personoid.humanoid.structure.detection.StructureLocator;
-import com.personoid.humanoid.utils.*;
+import com.personoid.humanoid.utils.LocationUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
@@ -24,7 +24,6 @@ public class FindStructureActivity extends Activity {
     private final List<Location> attempted = new ArrayList<>();
 
     public FindStructureActivity(StructureLocator locator, List<Structure> exclusions, int travelRadius, int maxAttempts) {
-        super(ActivityType.SEARCHING);
         this.locator = locator;
         this.exclusions = exclusions;
         this.travelRadius = travelRadius;
@@ -78,5 +77,15 @@ public class FindStructureActivity extends Activity {
     @Override
     public boolean canStop(StopType stopType) {
         return true;
+    }
+
+    @Override
+    public Priority getPriority() {
+        return Priority.NORMAL;
+    }
+
+    @Override
+    public BoredomSettings getBoredomSettings() {
+        return null;
     }
 }
