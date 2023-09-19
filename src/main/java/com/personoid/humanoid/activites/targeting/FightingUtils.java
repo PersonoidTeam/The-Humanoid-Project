@@ -2,12 +2,18 @@ package com.personoid.humanoid.activites.targeting;
 
 import com.google.common.collect.Multimap;
 import com.personoid.api.utils.Parameter;
+import com.personoid.api.utils.bukkit.Logger;
 import com.personoid.humanoid.values.ArmorItemValues;
+import com.personoid.nms.NMS;
+import com.personoid.nms.mappings.NMSClass;
+import com.personoid.nms.mappings.NMSMethod;
+import com.personoid.nms.packet.Package;
 import com.personoid.nms.packet.Packages;
-import com.personoid.nms.packet.ReflectionUtils;
+import com.personoid.nms.packet.NMSReflection;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Sound;
+import org.bukkit.craftbukkit.v1_19_R2.inventory.CraftItemStack;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
@@ -17,42 +23,57 @@ import java.lang.reflect.InvocationTargetException;
 
 public class FightingUtils {
     public static int getAttackSpeed(ItemStack item) {
-        try {
-            Class<?> craftClass = ReflectionUtils.getCraftClass("inventory", "CraftItemStack");
-            Object nmsItem = craftClass.getDeclaredMethod("asNMSCopy", ItemStack.class).invoke(null, item);
-            Object equipmentSlot = ReflectionUtils.getEquipmentSlot(EquipmentSlot.HAND);
-            Multimap<Object, Object> map = (Multimap<Object, Object>) ReflectionUtils.invoke(nmsItem, "a", equipmentSlot);
-            Class<?> attributesClass = ReflectionUtils.findClass(Packages.ATTRIBUTES, "GenericAttributes");
-            Object attackSpeedAttribute = ReflectionUtils.getField(attributesClass, "h"); // ATTACK_SPEED
-            double speed = map.get(attackSpeedAttribute).stream().mapToDouble(o -> (double) ReflectionUtils.invoke(o, "d")).sum(); // getAmount
-            //Bukkit.broadcastMessage(item.getType().name() + " attack damage: " + damage);
-            return (int) (1 / (4 + speed) * 20);
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
-        return 0;
+        if (item == null) return 4;
+        Object nmsItem = NMSReflection.getNMSItemStack(item);
+
+        NMSClass equipmentSlotClass = Package.ENTITY.sub("EquipmentSlot").getMappedClass();
+        Object equipmentSlot = equipmentSlotClass.getField("MAINHAND").getStaticValue();
+
+        NMSClass itemClass = Package.ITEM.sub("ItemStack").getMappedClass();
+        NMSMethod getAttrModMethod = itemClass.getMethod("getAttributeModifiers", equipmentSlotClass.getRawClass());
+        Multimap<Object, Object> map = getAttrModMethod.invoke(nmsItem, equipmentSlot);
+
+        NMSClass attributesClass = Package.ENTITY.sub("ai.attributes.Attributes").getMappedClass();
+        Object attribute = attributesClass.getField("ATTACK_SPEED").getStaticValue();
+
+        NMSClass attributeClass = Package.ENTITY.sub("ai.attributes.AttributeModifier").getMappedClass();
+        NMSMethod getAmountMethod = attributeClass.getMethod("getAmount");
+
+        double speed = map.get(attribute).stream().mapToDouble(getAmountMethod::invoke).sum();
+        //Bukkit.broadcastMessage(item.getType().name() + " attack damage: " + damage);
+        return (int) (1 / (4 + speed) * 20);
     }
 
     public static double getAttackDamage(ItemStack item) {
-        try {
-            Class<?> craftClass = ReflectionUtils.getCraftClass("inventory", "CraftItemStack");
-            Object nmsItem = craftClass.getDeclaredMethod("asNMSCopy", ItemStack.class).invoke(null, item);
-            Object equipmentSlot = ReflectionUtils.getEquipmentSlot(EquipmentSlot.HAND);
-            Multimap<Object, Object> map = (Multimap<Object, Object>) ReflectionUtils.invoke(nmsItem, "a", equipmentSlot);
-            Class<?> attributesClass = ReflectionUtils.findClass(Packages.ATTRIBUTES, "GenericAttributes");
-            Object attackDamageAttribute = ReflectionUtils.getField(attributesClass, "f"); // ATTACK_DAMAGE
-            double damage = map.get(attackDamageAttribute).stream().mapToDouble(o -> (double) ReflectionUtils.invoke(o, "d")).sum(); // getAmount
-            //Bukkit.broadcastMessage(item.getType().name() + " attack damage: " + damage);
-            return damage;
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {}
-        return 0;
+        if (item == null) return 0.5F;
+        Object nmsItem = NMSReflection.getNMSItemStack(item);
+
+        NMSClass equipmentSlotClass = Package.ENTITY.sub("EquipmentSlot").getMappedClass();
+        Object equipmentSlot = equipmentSlotClass.getField("MAINHAND").getStaticValue();
+
+        NMSClass itemClass = Package.ITEM.sub("ItemStack").getMappedClass();
+        NMSMethod getAttrModMethod = itemClass.getMethod("getAttributeModifiers", equipmentSlotClass.getRawClass());
+        Multimap<Object, Object> map = getAttrModMethod.invoke(nmsItem, equipmentSlot);
+
+        NMSClass attributesClass = Package.ENTITY.sub("ai.attributes.Attributes").getMappedClass();
+        Object attribute = attributesClass.getField("ATTACK_DAMAGE").getStaticValue();
+
+        NMSClass attributeClass = Package.ENTITY.sub("ai.attributes.AttributeModifier").getMappedClass();
+        NMSMethod getAmountMethod = attributeClass.getMethod("getAmount");
+
+        double damage = map.get(attribute).stream().mapToDouble(getAmountMethod::invoke).sum();
+        //Bukkit.broadcastMessage(item.getType().name() + " attack damage: " + damage);
+        return damage;
     }
 
     public static void playCriticalHitEffect(Location location) {
         // particle type, ?, position, offset/range, speed, number of particles
-        Class<?> particleTypesClass = ReflectionUtils.findClass(Packages.PARTICLE_TYPES, "Particles");
-        Class<?> particleParamClass = ReflectionUtils.findClass(Packages.PARTICLE_TYPES, "ParticleParam");
-        Object critParticle = ReflectionUtils.getField(particleTypesClass, "g"); // CRIT
+        NMSClass particleTypesClass = Package.minecraft("core.particles.ParticleTypes").getMappedClass();
+        NMSClass particleParamClass = Package.minecraft("core.particles.ParticleOptions").getMappedClass();
 
-        Parameter param1 = new Parameter(particleParamClass, critParticle);
+        Object critParticle = particleTypesClass.getField("CRIT").getStaticValue();
+
+        Parameter param1 = new Parameter(particleParamClass.getRawClass(), critParticle);
         Parameter param2 = new Parameter(boolean.class, false);
         Parameter param3 = new Parameter(double.class, location.getX());
         Parameter param4 = new Parameter(double.class, location.getY());
@@ -63,16 +84,13 @@ public class FightingUtils {
         Parameter param9 = new Parameter(float.class, 0F);
         Parameter param10 = new Parameter(int.class, 15);
 
-        try {
-            ReflectionUtils.createPacket("PacketPlayOutWorldParticles", param1, param2, param3, param4, param5,
-                    param6, param7, param8, param9, param10).send();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        NMS.createPacket("PacketPlayOutWorldParticles", param1, param2, param3, param4, param5,
+                param6, param7, param8, param9, param10).send();
         location.getWorld().playSound(location, Sound.ENTITY_PLAYER_ATTACK_CRIT, 1, 1);
     }
 
     public static boolean isSimilar(ItemStack item1, ItemStack item2) {
+        if (item1 == null || item2 == null) return false;
         boolean baseSimilar = item1.isSimilar(item2);
         if (!baseSimilar) {
             String item1Type = item1.getType().name();

@@ -8,7 +8,9 @@ public enum WoodSet {
     ACACIA("acacia"),
     DARK_OAK("dark_oak"),
     CRIMSON("crimson"),
-    WARPED("warped");
+    WARPED("warped"),
+    MANGROVE("mangrove"),
+    CHERRY("cherry");
 
     public static final WoodSet[] ALL = values();
 

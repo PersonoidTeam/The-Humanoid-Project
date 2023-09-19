@@ -36,8 +36,8 @@ public class WanderActivity extends Activity {
 
     @Override
     public void onUpdate() {
-        Bukkit.broadcastMessage("On Ground: " + getNPC().isOnGround());
-        Bukkit.broadcastMessage("In Water: " + getNPC().isInWater());
+/*        Bukkit.broadcastMessage("On Ground: " + getNPC().isOnGround());
+        Bukkit.broadcastMessage("In Water: " + getNPC().isInWater());*/
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.personoid.api.PersonoidAPI;
 import com.personoid.api.npc.NPC;
 import com.personoid.api.npc.Skin;
 import com.personoid.api.utils.bukkit.Message;
+import com.personoid.humanoid.activites.location.WanderActivity;
 import com.personoid.humanoid.activites.targeting.FightPlayerActivity;
 import com.personoid.humanoid.features.TestFeature;
 import com.personoid.humanoid.handlers.CommandHandler;
@@ -28,7 +29,7 @@ public class CreateNPCCommand extends CommandHandler.Command {
         //npc.getNavigation().getPathfinder().getConfig().setUseChunking(false);
         npc.getNavigation().getOptions().setShowPath(true);
         npc.getBrain().getActivityManager().register(
-                //new WanderActivity(),
+                //new WanderActivity()
                 //new MineTreeActivity(StructurePreset.SMALL_TREE_OAK.getReference(), 20),
                 //new MineTreeActivity(StructurePreset.LARGE_TREE_OAK.getReference(), 20),
                 //new FollowEntityActivity(sender)
