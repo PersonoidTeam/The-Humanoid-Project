@@ -3,10 +3,19 @@ package com.personoid.humanoid.activites.location;
 import com.personoid.api.activities.GoToLocationActivity;
 import com.personoid.api.ai.activity.Activity;
 import com.personoid.api.ai.looking.target.EntityTarget;
+import com.personoid.api.pathfinding.calc.Path;
+import com.personoid.api.pathfinding.calc.goal.BlockGoal;
+import com.personoid.api.pathfinding.calc.node.Node;
+import com.personoid.api.pathfinding.calc.pathfinder.PathFinder;
+import com.personoid.api.pathfinding.calc.utils.BlockPos;
+import com.personoid.api.utils.LocationUtils;
 import com.personoid.api.utils.math.MathUtils;
 import com.personoid.api.utils.types.Priority;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
+import org.bukkit.util.Vector;
 
 public class FollowEntityActivity extends Activity {
     private static final int CHECK_RATE = 5;
@@ -52,24 +61,24 @@ public class FollowEntityActivity extends Activity {
                 goTo.getOptions().setFaceLocation(false, Priority.NORMAL);
                 lastCheckLoc = entity.getLocation();
                 run(goTo);
-            }*/
-            //Location startLoc = LocationUtils.getBlockInDir(getNPC().getLocation().clone(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
-/*            PathFinder pathfinder = getNPC().getNavigation().getPathfinder();
+            }
+            Location startLoc = LocationUtils.getBlockInDir(getNPC().getLocation().clone(), BlockFace.DOWN).getRelative(BlockFace.UP).getLocation();
+            PathFinder pathfinder = getNPC().getNavigation().getPathfinder();
             Path currentPath = getNPC().getNavigation().getCurrentPath();
-            Path newPath = pathfinder.getPath(BlockPos.fromLocation(startLoc), BlockPos.fromLocation(endLoc), entity.getWorld());
+            Path newPath = pathfinder.findPath(BlockPos.fromLocation(startLoc), new BlockGoal(BlockPos.fromLocation(entity.getLocation())), entity.getWorld());
 
             boolean samePath = false;
-*//*            if (currentPath != null) {
+            if (currentPath != null) {
                 boolean firstNode = true;
                 for (Node node : newPath.getNodes()) {
                     if (currentPath.getNextNodeIndex() >= currentPath.size()) continue;
-                    if (node.matchLocation(currentPath.getNode(currentPath.getNextNodeIndex())) && !firstNode) {
+                    if (node.equals(currentPath.getNode(currentPath.getNextNodeIndex())) && !firstNode) {
                         samePath = true;
                         break;
                     }
                     firstNode = false;
                 }
-            }*//*
+            }
 
             if (!samePath) {
                 GoToLocationActivity goTo = new GoToLocationActivity(entity.getLocation(), newPath, GoToLocationActivity.MovementType.SPRINT_JUMP){

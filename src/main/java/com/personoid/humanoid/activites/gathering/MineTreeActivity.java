@@ -73,7 +73,7 @@ public class MineTreeActivity extends Activity {
             Bukkit.broadcastMessage("Mining log at: " + LocationUtils.toStringBasic(block.getLocation()));
             if (result.getType() == Result.Type.SUCCESS) {
                 Bukkit.broadcastMessage("Successfully travelled to log");
-                run(new BreakBlockActivity(block).onFinished((result1) -> {
+                getNPC().getBlocker().mine(block, true, result1 -> {
                     if (result1.getType() == Result.Type.SUCCESS) {
                         Bukkit.broadcastMessage("Mined log successfully!");
                         currentLogIndex++;
@@ -89,7 +89,7 @@ public class MineTreeActivity extends Activity {
                         exclusions.add(tree);
                         tryFindTree();
                     }
-                }));
+                });
             } else {
                 Bukkit.broadcastMessage("Couldn't travel to log");
                 exclusions.add(tree);
@@ -97,8 +97,8 @@ public class MineTreeActivity extends Activity {
             }
         });
         goTo.getOptions().setFaceLocation(true, Priority.NORMAL);
+        goTo.getOptions().setStoppingDistance(1);
         //getNPC().getLookController().addTarget("mine_tree_log", new Target(block, Priority.HIGH));
-        goTo.getOptions().setStoppingDistance(0F);
         Bukkit.broadcastMessage("Going to target location: " + LocationUtils.toStringBasic(pathableLoc));
         run(goTo);
     }

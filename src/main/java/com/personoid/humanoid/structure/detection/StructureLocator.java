@@ -55,7 +55,7 @@ public class StructureLocator {
                             neededBlocks.addAll(layer.getMaterials());
                             Location validationLoc = checkLoc.clone();
                             if (!startHighestY) validationLoc.setY(highestY + 1);
-                            List<Block> foundBlocks = validateLayer(layer, validationLoc);
+                            List<Block> foundBlocks = validateLayer(layer, validationLoc.getBlock());
                             structureBlocks.addAll(foundBlocks);
                             foundBlocks.forEach(block -> neededBlocks.remove(layer.getGenericMaterial(block.getType())));
                             for (Block block : foundBlocks) {
@@ -112,63 +112,112 @@ public class StructureLocator {
 
     // look for the rest of the blocks within the layer based on the layer's minimum bounds
     /** @return the blocks found within the layer **/
-    public List<Block> validateLayer(Layer layer, Location from) {
-        Set<Block> found = new HashSet<>();
+    private List<Block> validateLayer(Layer layer, Block from) {
+        List<Block> found = new ArrayList<>();
         int searchBoundsXz = layer.getMaxBounds().getXz();
         int searchBoundsY = layer.getMaxBounds().getY();
+        // check minimum bounds
         int lowestYPosBlock = Integer.MAX_VALUE;
-        Set<Block> tempList = new HashSet<>();
-
+        List<Block> tempList = new ArrayList<>();
         for (int x = -searchBoundsXz; x < searchBoundsXz; x++) {
             for (int y = 0; y < searchBoundsY; y++) {
                 for (int z = -searchBoundsXz; z < searchBoundsXz; z++) {
-                    Location checkLoc = from.clone().add(x, y, z);
+                    Location checkLoc = from.getLocation().clone().add(x, y, z);
                     Material material = checkLoc.getBlock().getType();
-                    if (layer.contains(material)) {
-                        Block block = checkLoc.getBlock();
-                        for (BlockFace face : BlockFace.values()) {
-                            Block relative = block.getRelative(face);
-                            if (layer.contains(relative.getType())) {
-                                tempList.add(block);
-                                if (block.getY() < lowestYPosBlock) {
-                                    lowestYPosBlock = block.getY();
-                                }
-                                break;
-                            }
+                    if (layer.contains(material)) { // found a block within the layer
+                        //Bukkit.broadcastMessage("Found block within layer: " + material.name());
+                        if (layer.getMinBounds() != null) {
+                            tempList.add(checkLoc.getBlock()); // if the minimum bounds given are greater than one block tall
+                            if (lowestYPosBlock > checkLoc.getBlockY()) lowestYPosBlock = checkLoc.getBlockY();
                         }
+                        else found.add(checkLoc.getBlock());
                     }
                 }
             }
         }
-
         if (!tempList.isEmpty()) {
             int minBoundsXz = layer.getMinBounds().getXz();
             int minBoundsY = layer.getMinBounds().getY();
-            double total = Math.pow(minBoundsXz + Math.ceil(minBoundsXz / 2F), 2);
-            double minPercent = Math.pow(minBoundsXz, 2) / total * 100;
-            Set<Block> tempWidthList = new HashSet<>();
+            // epic super way to get minimum percentage of blocks needed:
+            // width squared / (width + Math.ceil(width / 2) squared) * 100
+            double totalSqrt = minBoundsXz + Math.ceil(minBoundsXz / 2F);
+            double minPercent = (minBoundsXz * minBoundsXz) / (totalSqrt * totalSqrt) * 100;
+            List<Block> tempWidthList = new ArrayList<>();
             int foundYBlocks = 0;
             int nextY = lowestYPosBlock;
-            Set<Location> tempXzSet = new HashSet<>();
             for (Block block : tempList) {
                 if (block.getY() == nextY) {
                     foundYBlocks++;
                     nextY++;
                 }
-                Location checkLoc = block.getLocation();
-                if (!tempXzSet.contains(checkLoc)) {
-                    tempXzSet.add(checkLoc);
-                    tempWidthList.add(block);
+                // add only different Xz blocks to list to avoid percentage y bias
+                boolean foundSameXz = false;
+                for (Block block1 : tempWidthList) {
+                    if (block.getX() == block1.getX() && block.getZ() == block1.getZ()) {
+                        foundSameXz = true;
+                        break;
+                    }
                 }
+                if (!foundSameXz) tempWidthList.add(block);
             }
-            double percent = (tempWidthList.size() / total) * 100;
+            //Bukkit.broadcastMessage("Total y blocks found: " + foundYBlocks);
+            double percent = tempWidthList.size() / (totalSqrt * totalSqrt) * 100;
+            //Bukkit.broadcastMessage("Min percent: " + minPercent + ", found percent: " + percent);
             if (percent >= minPercent && foundYBlocks >= minBoundsY) {
+                //Bukkit.broadcastMessage("Valid blocks found in layer, adding to list...");
                 found.addAll(tempWidthList);
             }
         }
-
-        return new ArrayList<>(found);
+        //Bukkit.broadcastMessage("Found total of " + found.size() + " blocks within layer");
+        return found;
     }
+
+    private boolean isConnected(Layer layer, Set<Block> blocks) {
+        if (blocks.isEmpty()) {
+            return false;
+        }
+
+        // Create a set to track visited blocks.
+        Set<Block> visited = new HashSet<>();
+
+        // Start the DFS from the first block in the set.
+        Block startBlock = blocks.iterator().next();
+
+        // Perform DFS.
+        return depthFirstSearch(layer, blocks, visited, startBlock);
+    }
+
+    private boolean depthFirstSearch(Layer layer, Set<Block> blocks, Set<Block> visited, Block currentBlock) {
+        visited.add(currentBlock);
+
+        // Check if we've visited all blocks.
+        if (visited.size() == blocks.size()) {
+            return true;
+        }
+
+        // Define the possible neighboring blocks.
+        int[] dx = { -1, 1, 0, 0 };
+        int[] dy = { 0, 0, 1, -1 };
+        int[] dz = { 0, 0, 0, 0 };
+
+        for (int i = 0; i < 4; i++) {
+            int newX = currentBlock.getX() + dx[i];
+            int newY = currentBlock.getY() + dy[i];
+            int newZ = currentBlock.getZ() + dz[i];
+
+            Block neighbor = currentBlock.getWorld().getBlockAt(newX, newY, newZ);
+
+            // Check if the neighbor is within the layer's bounds and is part of the blocks set.
+            if (layer.contains(neighbor.getType()) && blocks.contains(neighbor) && !visited.contains(neighbor)) {
+                if (depthFirstSearch(layer, blocks, visited, neighbor)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
 
     public Range getSearchRange() {
         return searchRange;
